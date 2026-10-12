@@ -192,6 +192,25 @@ The Sprint 2 backlog requires: (1) a live sponsor-accessible Netlify URL; (2) a 
 4. Push your feature branch and open a pull request for teammate review before merging into `main`.
 5. Deadline-rule changes must use cited primary legal sources and receive sponsor/team review; see `lib/deadlines.js` for current questions about counting days and holidays.
 
+## Testing
+
+For unit testing we are currently using the built 'node:test'. This might need to change in the future. 
+
+To run the unit tests:
+
+```bash
+npm test
+```
+- A recent version of Node is required
+
+To add to the unit tests:
+
+- Create a file ending in `.test.js` to have it run when you call the test script. 
+
+You might see a [MODULE_TYPELESS_PACKAGE_JSON] error in your console, you can safely ignore it. 
+
+
+
 ## Team
 
 | Name | Role |
