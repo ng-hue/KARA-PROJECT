@@ -1,0 +1,112 @@
+[
+  {
+    "id": "sample-1",
+    "title": "Synthetic sample 1: policy index",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional policy index for demonstration. No real records are represented.",
+    "state": "AZ",
+    "target_agency": "Fictional Arizona Records Office",
+    "date_sent": "2026-08-01",
+    "status": "Draft",
+    "deadline": null,
+    "created_at": "2026-08-01T12:00:00Z"
+  },
+  {
+    "id": "sample-2",
+    "title": "Synthetic sample 2: aggregate staffing summary",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional aggregate staffing summary for demonstration. No real records are represented.",
+    "state": "CA",
+    "target_agency": "Fictional California Records Office",
+    "date_sent": "2026-08-02",
+    "status": "Sent",
+    "deadline": null,
+    "created_at": "2026-08-02T12:00:00Z"
+  },
+  {
+    "id": "sample-3",
+    "title": "Synthetic sample 3: training outline",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional training outline for demonstration. No real records are represented.",
+    "state": "ME",
+    "target_agency": "Fictional Maine Records Office",
+    "date_sent": "2026-08-03",
+    "status": "Acknowledged",
+    "deadline": null,
+    "created_at": "2026-08-03T12:00:00Z"
+  },
+  {
+    "id": "sample-4",
+    "title": "Synthetic sample 4: contract index",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional contract index for demonstration. No real records are represented.",
+    "state": "MN",
+    "target_agency": "Fictional Minnesota Records Office",
+    "date_sent": "2026-08-04",
+    "status": "Fulfilled",
+    "deadline": null,
+    "created_at": "2026-08-04T12:00:00Z"
+  },
+  {
+    "id": "sample-5",
+    "title": "Synthetic sample 5: annual audit summary",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional annual audit summary for demonstration. No real records are represented.",
+    "state": "TX",
+    "target_agency": "Fictional Texas Records Office",
+    "date_sent": "2026-08-05",
+    "status": "Denied",
+    "deadline": null,
+    "created_at": "2026-08-05T12:00:00Z"
+  },
+  {
+    "id": "sample-6",
+    "title": "Synthetic sample 6: budget categories",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional budget categories for demonstration. No real records are represented.",
+    "state": "AZ",
+    "target_agency": "Fictional Arizona Records Office",
+    "date_sent": "2026-08-06",
+    "status": "Appealed",
+    "deadline": null,
+    "created_at": "2026-08-06T12:00:00Z"
+  },
+  {
+    "id": "sample-7",
+    "title": "Synthetic sample 7: public meeting schedule",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional public meeting schedule for demonstration. No real records are represented.",
+    "state": "CA",
+    "target_agency": "Fictional California Records Office",
+    "date_sent": "2026-08-07",
+    "status": "Draft",
+    "deadline": null,
+    "created_at": "2026-08-07T12:00:00Z"
+  },
+  {
+    "id": "sample-8",
+    "title": "Synthetic sample 8: records category index",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional records category index for demonstration. No real records are represented.",
+    "state": "ME",
+    "target_agency": "Fictional Maine Records Office",
+    "date_sent": "2026-08-08",
+    "status": "Sent",
+    "deadline": null,
+    "created_at": "2026-08-08T12:00:00Z"
+  },
+  {
+    "id": "sample-9",
+    "title": "Synthetic sample 9: quarterly sample metrics",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional quarterly sample metrics for demonstration. No real records are represented.",
+    "state": "MN",
+    "target_agency": "Fictional Minnesota Records Office",
+    "date_sent": "2026-08-09",
+    "status": "Acknowledged",
+    "deadline": null,
+    "created_at": "2026-08-09T12:00:00Z"
+  },
+  {
+    "id": "sample-10",
+    "title": "Synthetic sample 10: retention schedule",
+    "request_text": "TEST FIXTURE ONLY: Request a fictional retention schedule for demonstration. No real records are represented.",
+    "state": "TX",
+    "target_agency": "Fictional Texas Records Office",
+    "date_sent": "2026-08-10",
+    "status": "Fulfilled",
+    "deadline": null,
+    "created_at": "2026-08-10T12:00:00Z"
+  }
+]

@@ -54,11 +54,23 @@ Then open http://localhost:3000.
 
 ### Seed the database
 
-Inserts 10 fake requests across multiple states and statuses:
+From the project root, run this command to seed the local preview fixture with
+10 fake requests across five states and six statuses:
 
 ```bash
 npm run seed
 ```
+
+This command writes the synthetic requests to `lib/sampleData.json`. It does not
+require Supabase credentials or make a network connection. Run `npm run dev` to
+view the requests in preview mode. Running the seed command again regenerates
+the same 10 fixtures; it does not clear requests already saved in browser storage.
+
+All seeded data uses fictional agency labels and test-only request text. It
+contains no real names, child welfare data, or real agency correspondence.
+
+After setting the Supabase variables, run `supabase/schema.sql` in the Supabase
+SQL Editor to create the table and policies.
 
 ## Data Model: `requests`
 
