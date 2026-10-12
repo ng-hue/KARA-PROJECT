@@ -74,6 +74,14 @@ npm run seed
 | status | text | Draft, Sent, Acknowledged, Fulfilled, Denied, Appealed (default: Draft) |
 | created_at | timestamp | Generated |
 
+## Deadline Lookup
+
+To add additional states and their relevant information copy the existing structure in:
+
+- lib/deadlines.js
+
+Include the Legal statute, number of days (if available), business or calendar (if available), legal citation, and openable sourceUrl
+
 ## Deployment
 
 Every push to `main` deploys to production on Netlify. Every pull request gets a deploy preview.
@@ -85,6 +93,25 @@ Every push to `main` deploys to production on Netlify. Every pull request gets a
 
 - Work on a feature branch and merge to `main` through a pull request
 - Add new states to the deadline lookup table with a cited primary source (see `docs/` for the statute research table)
+
+## Testing
+
+For unit testing we are currently using the built 'node:test'. This might need to change in the future. 
+
+To run the unit tests:
+
+```bash
+npm test
+```
+- A recent version of Node is required
+
+To add to the unit tests:
+
+- Create a file ending in `.test.js` to have it run when you call the test script. 
+
+You might see a [MODULE_TYPELESS_PACKAGE_JSON] error in your console, you can safely ignore it. 
+
+
 
 ## Team
 
