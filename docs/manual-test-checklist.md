@@ -46,7 +46,7 @@
 **Owner for triage:** Daniel Anderson (per Sprint 2 backlog)  
 **Severity:** High — blocks a core sprint goal  
 **Affected tests:** TC-12, TC-13, TC-14, TC-15, TC-16  
-**Status:** Open / awaiting fix
+**Status:** Partially addressed in later retest — see retest addendum below
 
 **Reproduction:**
 1. Visit the deployed Netlify New Request form.
@@ -67,8 +67,32 @@
 - [x] Recorded a date and Pass/Fail for every case.
 - [x] Documented five failures under one consolidated defect.
 - [ ] Raise/link QA-001 in Jira and notify the US4 owner.
-- [ ] Resolve and retest TC-12–TC-16.
+- [x] Retest TC-12–TC-16 against updated testing deployment (see addendum).
+- [ ] Verify Arizona/Minnesota user-facing labels and primary-source statutory interpretation; close or narrow QA-001 after team review.
 - [ ] Have a teammate review this checklist and README setup instructions.
 - [ ] Complete separate US6 tests for GitHub `main` production auto-deploy and PR preview (not covered by the 17 functional tests).
 
 **Evidence note:** No screenshot URLs, request IDs, or timestamps were provided for individual cases. Attach them to the Jira issue when available rather than inventing them.
+
+
+---
+
+## Retest addendum — updated Netlify testing deployment
+
+**Retest recorded:** October 11, 2026 (conversation date; confirm exact execution date before final Jira submission)  
+**Environment:** Manual deployment of `feature/tommy` to https://kara-public-records-tracker.netlify.app  
+**Build:** Next.js 16.4.0; Daniel's `lib/deadlines.js` changes incorporated  
+**Evidence:** Tester reports and California request-list screenshot; Maine/Texas/AZ/MN results reported verbally in chat.  
+**Important:** This is a distinct manual testing site, not necessarily the team's GitHub-connected production Netlify project.
+
+| Original test | State | Date sent | Expected per implemented rules | Retest observation | Assessment |
+|---|---|---|---|---|---|
+| TC-12 | AZ | 2026-10-05 | `null` (no fixed numerical deadline; promptly) | Pending research / blank | **Calculation behavior consistent; UI label needs clarification** |
+| TC-13 | CA | 2026-10-05 | 2026-10-15 (10 calendar days) | 2026-10-15 on request list | **PASS** |
+| TC-14 | TX | 2026-10-05 | 2026-10-19 (10 business days excluding weekends) | 2026-10-19 reported | **PASS** |
+| TC-15 | ME | 2026-10-05 | 2026-10-12 (5 business days excluding weekends) | 2026-10-12 reported | **PASS** |
+| TC-16 | MN | 2026-10-05 | `null` (no fixed numerical deadline; promptly) | Pending research / blank | **Calculation behavior consistent; UI label needs clarification** |
+
+**Retest summary:** 3 unequivocal passes (CA, TX, ME); 2 conditional/UX follow-ups (AZ, MN); no observed mismatches with the current numerical calculation rules. Dates here are software expectations from the implemented unit-tested rules, **not independent legal validation**. For AZ/MN, `null` is appropriate to the coded no-fixed-date rules, but showing **Pending research** conflates a deliberate nonnumeric outcome with an unimplemented rule.
+
+**QA-001 disposition:** Partially fixed. Numeric deadline generation appears corrected for CA, TX, and ME in the updated test deployment. Do **not** erase original October 9 failures or claim the full statutory deadline feature is complete. Have the US4 owner confirm the legal source table and clarify the AZ/MN UI; retest on the team's official deployment after the reviewed changes reach `main`. Existing database rows with NULL deadlines are not automatically backfilled by new request-submission logic.

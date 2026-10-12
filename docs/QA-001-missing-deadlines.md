@@ -5,7 +5,7 @@
 **Related story:** US4 — Automatic statutory deadline  
 **Assigned team owner (backlog):** Daniel Anderson  
 **Severity:** High  
-**Status:** Open  
+**Status:** Partially addressed — retest follow-up pending  
 **Discovered:** October 9, 2026
 
 ## Summary
@@ -30,3 +30,16 @@ Core Sprint 2 deadline functionality is not operational in production. These cas
 - QA retests TC-12–TC-16 and updates the dated result log.
 
 **Evidence:** Tester-reported results on October 9; attach screenshots/record IDs when available.
+
+
+## Updated deployment retest (October 11, 2026; confirm actual date)
+
+After merging Daniel's deadline changes and manually deploying `feature/tommy` to the separate Netlify testing site, the tester reported:
+
+- **CA — PASS:** request sent 2026-10-05 showed deadline 2026-10-15 (10 calendar days); visible in screenshot.
+- **ME — PASS:** deadline 2026-10-12 (5 weekdays after sent date), tester reported.
+- **TX — PASS:** deadline 2026-10-19 (10 weekdays after sent date), tester reported.
+- **AZ — CONDITIONAL:** `Pending research` / blank. Updated code intentionally returns `null` for a no-fixed-numerical-deadline / promptly rule. UI wording does not distinguish this from unfinished research.
+- **MN — CONDITIONAL:** Same issue as AZ: `Pending research` / blank, consistent with intentional `null` but confusing UI.
+
+**Disposition:** Narrow the original bug: CA/ME/TX numeric calculations are now passing in the test deployment, while AZ/MN need an explicit no-fixed-deadline display state and confirmation of legal interpretation. Historical saved records remain `NULL` unless a separate backfill is approved. Recheck on the official GitHub-connected deployment once updates are merged; avoid closing this issue before review.
