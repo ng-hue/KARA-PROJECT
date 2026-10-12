@@ -2,7 +2,7 @@
 
 A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to log public records requests, view request statuses, and track statutory response deadlines once the five-state rules are verified and implemented. Built by an ASU Capstone team in partnership with KARA.
 
-**Sprint 2 (September 28–October 9, 2026):** first build sprint. This README documents the reviewed repository snapshot and the team’s confirmed manual Netlify/Supabase test as of October 9, 2026; it does not imply unfinished sprint acceptance criteria have passed.
+**Sprint 2 (September 28–October 9, 2026):** First build sprint. This README includes deployment verification and QA retesting completed through October 12, 2026. Some Sprint 2 acceptance criteria remain pending and are documented below.
 
 > **Fake data only.** Do not add real child welfare records, real personal information, or real agency correspondence to this application or its Supabase database.
 
@@ -12,13 +12,26 @@ A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to lo
 - View requests in newest-first order with status badges.
 - Supported state selections: Arizona (AZ), California (CA), Maine (ME), Minnesota (MN), and Texas (TX).
 - Save requests to Supabase when the project is configured, or use local browser preview mode when it is not.
-- **Deadlines are not yet populated in the reviewed snapshot.** The calculation logic exists in `lib/deadlines.js`, but the statutory rules are currently unverified placeholders. The app returns `null` for a deadline until a state rule is supplied and reviewed. Do not treat blank deadlines as legally verified advice.
+- **Statutory deadlines:** The application implements deadline calculations for five supported states:
+  - California (CA): 10 calendar days
+  - Maine (ME): 5 business days
+  - Texas (TX): 10 business days
+  - Arizona (AZ): No fixed numerical deadline in the implemented rule
+  - Minnesota (MN): No fixed numerical deadline in the implemented rule
+
+All 11 automated unit tests passed. Manual retesting confirmed the calculated deadlines for California, Maine, and Texas.
+
+Arizona and Minnesota currently display "Pending research" when no numerical deadline is returned. This label needs clarification.
+
+Older records created before the deadline rules were implemented may still contain NULL deadlines.
+
+The statutory rules require legal and sponsor review before being relied upon for actual public records requests.
 
 Later-sprint features (not yet implemented): correspondence storage, user roles/access controls, and response intake.
 
 ## Tech stack
 
-- Next.js 15 / React 19
+- Next.js 16.4.0 / React 19
 - Tailwind CSS 4
 - Supabase (PostgreSQL)
 - Netlify (hosting)
@@ -112,12 +125,17 @@ For a fresh *development-only* Supabase project:
 
 ## Deployment: Netlify
 
-- **Live site:** https://kara-public-records-tracker.netlify.app
-- **Netlify project:** https://app.netlify.com/projects/kara-public-records-tracker
+- **Production site:** https://kprsite.netlify.app
+- **Netlify production project:** https://app.netlify.com/projects/kprsite
+- **Deploy Preview (PR #4):** https://deploy-preview-4--kprsite.netlify.app
+- **Separate testing site:** https://kara-public-records-tracker.netlify.app
 - **Build command:** `npm run build`
 - **Publish directory:** `.next`
 - **Configuration:** `netlify.toml`
-- **Production branch target:** `main` **once GitHub integration is enabled**
+- **Production branch:** `main` (GitHub integration enabled; automatic deployments verified)
+- **Verified production commit:** `ba0cb29`
+- **Production deployment:** Successfully published automatically after PR #4 merged (20 seconds)
+- **Deploy preview:** Automatically created for PR #4 (24 seconds)
 
 ### Environment variables on Netlify
 
@@ -130,7 +148,9 @@ Use the same **public** project values as local development. They need to be ava
 
 ### Current manual deployment procedure
 
-GitHub-based auto-deploy has **not yet been configured** because the repository belongs to a teammate and its Netlify GitHub App permissions are pending. Until then, an authorized team member can deploy from a local checkout linked to the Netlify site:
+The team's official Netlify project (`kprsite`) is connected to the GitHub repository `ng-hue/KARA-PROJECT`. Changes merged into `main` automatically trigger production deployments, and pull requests generate deploy previews.
+
+The separate testing project (`kara-public-records-tracker`) is deployed manually using the Netlify CLI. An authorized team member can publish local changes to this testing site using the commands below. Before deploying, verify that the local directory is linked to the correct Netlify project.
 
 ```bash
 npm install
@@ -142,23 +162,30 @@ On Windows PowerShell, `npm.cmd ...` and `netlify.cmd deploy --prod` are alterna
 
 If the directory is not yet linked to the Netlify project, ask a team admin for access and use `netlify link` to connect it. **Do not create a second production site accidentally.**
 
-### Planned automatic deployment and previews — not yet verified
+### Automatic deployment and deploy previews — Verified
 
-Once the repository owner authorizes the Netlify GitHub App for `ng-hue/KARA-PROJECT`, configure continuous deployment with `main` as the production branch. Then test the following before describing them as operational:
+The team's official Netlify project (`kprsite`) is connected to `ng-hue/KARA-PROJECT`. Netlify automatically deploys changes merged into `main` and generates deploy previews when pull requests are opened.
 
-1. Push or merge a reviewed change to `main` and confirm Netlify starts a production deploy.
-2. Open a pull request targeting `main` and confirm Netlify creates a deploy-preview URL.
-3. Check that the production deploy is reflected at the live URL **within five minutes**, as required by US6.
-4. Record the live production URL, actual deploy-preview URL, date/time, commit SHA, and pass/fail result in the README or sprint test evidence. Do not invent a preview URL.
+Deployment behavior was verified on October 12, 2026, using pull request #4:
+
+1. **Deploy Preview:** Opening PR #4 automatically triggered a successful preview deployment at https://deploy-preview-4--kprsite.netlify.app (24 seconds).
+2. **Production Deployment:** Merging PR #4 into `main` triggered a successful production deployment at https://kprsite.netlify.app (20 seconds).
+3. **Database Connection:** Both the deploy preview and production website displayed requests from Supabase.
+4. **Production Commit:** `ba0cb29`.
+
+Future changes should be submitted through pull requests targeting `main`. Verify the deploy preview before merging, then confirm the production deployment succeeds.
 
 ### Sprint 2 deployment verification (US6)
 
-| Acceptance test | Current evidence/status |
-| --- | --- |
-| Sponsor-accessible Netlify URL | Live URL created; a test request entered on the live site appeared in Supabase (reported October 9, 2026) |
-| Push to `main` deploys within five minutes | **Not tested** — GitHub integration still pending |
-| Pull request creates a deploy-preview URL | **Not tested** — GitHub integration still pending; preview URL not available |
-| Environment secrets not committed | `.env.local` is ignored in the reviewed repository; **full commit-history audit not performed** |
+| Acceptance test | Result | Evidence |
+| --- | --- | --- |
+| GitHub connected to Netlify | **PASS** | `ng-hue/KARA-PROJECT` connected to the `kprsite` Netlify project. |
+| Sponsor-accessible production URL | **PASS** | https://kprsite.netlify.app |
+| Push/merge to `main` deploys within five minutes | **PASS** | PR #4 merged as commit `ba0cb29`; Netlify published the production deployment in 20 seconds. |
+| Pull request creates deploy-preview URL | **PASS** | PR #4 automatically created https://deploy-preview-4--kprsite.netlify.app (deployed in 24 seconds). |
+| Deploy preview connects to Supabase | **PASS** | Preview displayed Supabase request records and calculated deadlines. |
+| Production connects to Supabase | **PASS** | Production request list displayed shared Supabase records with no preview-mode banner. |
+| Environment files excluded from Git | **PARTIALLY VERIFIED** | `.env.local` is ignored; full Git history and credential audit not performed. |
 
 ### Adding a sixth state (US4 documentation; implement only after research approval)
 
@@ -174,15 +201,33 @@ Once the repository owner authorizes the Netlify GitHub App for `ng-hue/KARA-PRO
 
 - **Preview banner appears:** Check that both Supabase environment variables exist and restart the Next.js server (or redeploy Netlify after changing its environment variables).
 - **Requests don't appear in Supabase:** Verify the project URL, public key, table schema, applicable RLS policies, and the browser console/network errors.
-- **Deadline is blank:** Expected until state-specific rules in `lib/deadlines.js` are verified and populated. Do not invent statutory deadlines.
+- **Deadline is blank or shows "Pending research":**
+  - For Arizona and Minnesota, the current implementation does not generate a fixed numerical deadline.
+  - Older requests may have NULL deadlines because they were created before the updated rules were deployed.
+  - For newly created California, Maine, or Texas requests, an unexpected blank deadline should be investigated.
 - **Netlify blocks the deploy for Next.js security:** Update to a currently patched compatible Next.js release, test the production build, and deploy again. Commit the dependency changes on a feature branch for review.
 - **Windows says `npm.ps1` cannot run:** Use `npm.cmd` instead.
 
 ## Sprint 2 definition of done — remaining verification
 
-The Sprint 2 backlog requires: (1) a live sponsor-accessible Netlify URL; (2) a form submission stored in Supabase and shown in the list; (3) **at least 10 seeded fake requests in the Supabase-backed list**; (4) correct deadline calculations against the documented statutory table; (5) code in the shared GitHub repository with a commit from every teammate; and (6) Jira statuses kept current. The confirmed live-site-to-Supabase write test supports item (2), but the other criteria must be checked independently.
+The Sprint 2 deployment requirements have been verified:
 
-**QA/Documentation (US7):** A teammate who did not write these instructions must be able to start the app using the README alone. Separately, create and execute a manual checklist with **at least 10 test cases** covering form, validation, list, and deadlines; test on the deployed site **on or after October 8, 2026**, and record a **date and pass/fail** for every case. This README itself is not a substitute for that checklist.
+- The official Netlify production website is live.
+- GitHub pull requests automatically generate deploy previews.
+- Merging into main automatically triggers production deployment.
+- Production and preview deployments successfully display Supabase records.
+- The request form successfully creates records in Supabase.
+- The 17-case manual QA checklist has been executed and documented.
+- Five-state deadline retesting has been recorded.
+
+Outstanding verification:
+- Confirm a working database seed script inserts 10 fictional requests with the required state and status coverage.
+- Obtain legal and sponsor review of statutory deadline rules.
+- Confirm a new teammate can complete local setup using the README alone.
+- Verify all team commits and Jira task statuses.
+- Complete any outstanding credential/security review.
+
+See docs/manual-test-checklist.md and docs/QA-001-missing-deadlines.md for the original QA results and subsequent retests.
 
 ## Contributing
 
