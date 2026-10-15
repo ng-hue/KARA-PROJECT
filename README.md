@@ -217,13 +217,23 @@ To add to the unit tests:
 
 You might see a [MODULE_TYPELESS_PACKAGE_JSON] error in your console, you can safely ignore it. 
 
+## Risk management
 
+| Risk | Likelihood | Impact | Mitigation |
+| --- | --- | --- | --- |
+| Repository transfer breaks the Netlify deploy | Medium | High | Do US1 on Monday October 12 before any other code lands. Relink Netlify the same day. If the deploy is still broken on Tuesday, tell the sponsor; do not work around it with a second site. |
+| Row level security blocks the app itself | High | Medium | Write the RLS policies first, test with the anon key and an authenticated session before merging. Keep the seed script on the service role key. |
+| Team locked out of its own deployed app | Low | High | Sponsor account plus five team accounts created in US2. Supabase dashboard password reset is the fallback. Credentials never go in the repository. |
+| Backfilling status history on seeded rows is skipped | Medium | Low | US5 includes the backfill as a task. US7 checklist verifies every seeded request shows at least one history row. |
+| Another exam week cuts coding time | Medium | Medium | Each teammate names exam dates at the planning meeting. Reilly moves owners' tasks earlier or later in the sprint around them. Scope is not extended for lost days; stories are dropped to the product backlog instead. |
+| Roles and permissions get pulled in with auth | Medium | Medium | Roles are out of scope. Every signed-in user has the same permissions this sprint. Anyone who starts a roles table stops and moves it to the product backlog. |
+| Status rules are implemented in two places and drift | Medium | Medium | Transition rules and overdue rules each live in one shared helper (US5, US6) used by both the list and the detail page. |
 
 ## Team
 
 | Name | Role |
 | --- | --- |
-| Reilly Wirtz | Project Manager & SCRUM Master |
+| Reilly Wirtz | Project Manager |
 | Nathan Gentala | Backend & Architecture |
 | Angela Iweka | Frontend |
 | Daniel Anderson | Correspondence & Data |
