@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "node scripts/seed.cjs"
+    "seed": "node scripts/seed.cjs",
+    "seed:supabase": "node scripts/seed.cjs --supabase",
+    "test": "node --test lib/"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
