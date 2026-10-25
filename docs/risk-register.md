@@ -20,7 +20,7 @@ Tick the box in the last column once the person has confirmed they will watch th
 
 | Person | Risks | Confirmed on |
 |--------|-------|--------------|
-| Nathan | R1, R2, R3, R6 Yes
-| Tommy | R4, R7 Yes
-| Daniel | R7 Yes
-| Reilly | R5 Yes
+| Nathan | R1, R2, R3, R6 | 10/26
+| Tommy | R4, R7 | 10/26
+| Daniel | R7 | 10/26
+| Reilly | R5 | 10/26
