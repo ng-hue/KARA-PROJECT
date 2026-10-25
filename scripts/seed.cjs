@@ -110,25 +110,48 @@ async function seedSupabase(requests) {
     );
   }
 
-  const { createClient } = require("@supabase/supabase-js");
-  const supabase = createClient(url, serviceKey, { auth: { persistSession: false } });
+  // Calls the Supabase REST API with fetch instead of supabase-js, whose
+  // realtime client needs native WebSocket and fails on Node 20.
+  const api = restClient(url, serviceKey);
 
   // created_at is left to the database default.
   const rows = requests.map(({ created_at, ...row }) => row);
-  const { error } = await supabase.from("requests").upsert(rows, { onConflict: "id" });
-  if (error) throw new Error(`Supabase upsert failed: ${error.message}`);
+  const upsert = await api("POST", "requests?on_conflict=id", rows, {
+    Prefer: "resolution=merge-duplicates,return=minimal",
+  });
+  if (upsert.error) throw new Error(`Supabase upsert failed: ${upsert.error.message}`);
 
-  const { count, error: countError } = await supabase
-    .from("requests")
-    .select("id", { count: "exact", head: true })
-    .in("id", rows.map((r) => r.id));
-  if (countError) throw new Error(`Supabase check failed: ${countError.message}`);
-  if (count !== rows.length) {
-    throw new Error(`Expected ${rows.length} seeded rows in Supabase, found ${count}.`);
+  const seeded = await api("GET", `requests?select=id&id=in.(${rows.map((r) => r.id).join(",")})`);
+  if (seeded.error) throw new Error(`Supabase check failed: ${seeded.error.message}`);
+  if (seeded.data.length !== rows.length) {
+    throw new Error(`Expected ${rows.length} seeded rows in Supabase, found ${seeded.data.length}.`);
   }
-  console.log(`Upserted ${count} fake requests into Supabase public.requests.`);
+  console.log(`Upserted ${seeded.data.length} fake requests into Supabase public.requests.`);
 
-  await seedStatusHistory(supabase, rows);
+  await seedStatusHistory(api, rows);
+}
+
+// Minimal PostgREST client. Returns { data, error } like supabase-js.
+function restClient(url, key) {
+  const base = `${url.replace(/\/$/, "")}/rest/v1/`;
+  return async (method, pathAndQuery, body, extraHeaders = {}) => {
+    const res = await fetch(base + pathAndQuery, {
+      method,
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        ...extraHeaders,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const text = await res.text();
+    const json = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+      return { data: null, error: { code: json?.code, message: json?.message ?? `HTTP ${res.status}` } };
+    }
+    return { data: json, error: null };
+  };
 }
 
 // Missing table: Postgres 42P01, or PostgREST PGRST205 (not in schema cache).
@@ -138,11 +161,11 @@ const MISSING_TABLE_CODES = ["42P01", "PGRST205"];
 // matching the backfill in supabase/status_history.sql (US5). Skipped when
 // the status_history table does not exist yet. Requests that already have
 // history are left alone, so reruns add nothing.
-async function seedStatusHistory(supabase, rows) {
-  const { data: existing, error } = await supabase
-    .from("status_history")
-    .select("request_id")
-    .in("request_id", rows.map((r) => r.id));
+async function seedStatusHistory(api, rows) {
+  const { data: existing, error } = await api(
+    "GET",
+    `status_history?select=request_id&request_id=in.(${rows.map((r) => r.id).join(",")})`
+  );
   if (error && MISSING_TABLE_CODES.includes(error.code)) {
     console.log("Skipped status history: the status_history table does not exist yet.");
     return;
@@ -161,7 +184,9 @@ async function seedStatusHistory(supabase, rows) {
     }));
 
   if (missing.length > 0) {
-    const { error: insertError } = await supabase.from("status_history").insert(missing);
+    const { error: insertError } = await api("POST", "status_history", missing, {
+      Prefer: "return=minimal",
+    });
     if (insertError) throw new Error(`Status history insert failed: ${insertError.message}`);
   }
   console.log(
