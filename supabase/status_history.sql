@@ -46,8 +46,16 @@ create index if not exists status_history_request_id_idx
 create index if not exists status_history_changed_at_idx
   on public.status_history(changed_at desc);
 
--- Backfill one creation-history row for every request that does not
--- already have a history record.
+-- Enable row level security.
+alter table public.status_history enable row level security;
+
+-- Normalize older rows that were created without a status.
+update public.requests
+set status = 'Draft'
+where status is null;
+
+-- Backfill one creation-history row for every existing request
+-- that does not already have a history record.
 insert into public.status_history (
   request_id,
   from_status,
@@ -67,8 +75,6 @@ where not exists (
   from public.status_history h
   where h.request_id = r.id
 );
-
-alter table public.status_history enable row level security;
 
 -- Change a request's status and record the change atomically.
 create or replace function public.change_request_status(
@@ -110,10 +116,12 @@ begin
       p_new_status;
   end if;
 
+  -- Update the request's current status.
   update public.requests
   set status = p_new_status
   where id = p_request_id;
 
+  -- Record the status change.
   insert into public.status_history (
     request_id,
     from_status,
