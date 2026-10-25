@@ -127,6 +127,46 @@ async function seedSupabase(requests) {
     throw new Error(`Expected ${rows.length} seeded rows in Supabase, found ${count}.`);
   }
   console.log(`Upserted ${count} fake requests into Supabase public.requests.`);
+
+  await seedStatusHistory(supabase, rows);
+}
+
+// Missing table: Postgres 42P01, or PostgREST PGRST205 (not in schema cache).
+const MISSING_TABLE_CODES = ["42P01", "PGRST205"];
+
+// Gives each seeded request one "Request created" history row (risk R4),
+// matching the backfill in supabase/status_history.sql (US5). Skipped when
+// the status_history table does not exist yet. Requests that already have
+// history are left alone, so reruns add nothing.
+async function seedStatusHistory(supabase, rows) {
+  const { data: existing, error } = await supabase
+    .from("status_history")
+    .select("request_id")
+    .in("request_id", rows.map((r) => r.id));
+  if (error && MISSING_TABLE_CODES.includes(error.code)) {
+    console.log("Skipped status history: the status_history table does not exist yet.");
+    return;
+  }
+  if (error) throw new Error(`Status history check failed: ${error.message}`);
+
+  const hasHistory = new Set(existing.map((h) => h.request_id));
+  const missing = rows
+    .filter((r) => !hasHistory.has(r.id))
+    .map((r) => ({
+      request_id: r.id,
+      from_status: null,
+      to_status: r.status,
+      changed_by: null,
+      note: "Request created",
+    }));
+
+  if (missing.length > 0) {
+    const { error: insertError } = await supabase.from("status_history").insert(missing);
+    if (insertError) throw new Error(`Status history insert failed: ${insertError.message}`);
+  }
+  console.log(
+    `Status history: added ${missing.length}, ${hasHistory.size} seeded requests already had history.`
+  );
 }
 
 main().catch((err) => {
