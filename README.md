@@ -2,32 +2,65 @@
 
 A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to log public records requests, view request statuses, and track statutory response deadlines once the five-state rules are verified and implemented. Built by an ASU Capstone team in partnership with KARA.
 
-**Sprint 2 (September 28–October 9, 2026):** First build sprint. This README includes deployment verification and QA retesting completed through October 12, 2026. Some Sprint 2 acceptance criteria remain pending and are documented below.
+**Sprint 3 (October 12–23, 2026):** This README reflects the Sprint 3 request-detail, deadline flagging, status-history, and documentation work currently merged or in progress.
 
 > **Fake data only.** Do not add real child welfare records, real personal information, or real agency correspondence to this application or its Supabase database.
 
 ## Current features and limitations
 
-- Create requests with a title, request text, state, target agency, date sent, and status.
-- View requests in newest-first order with status badges.
-- Supported state selections: Arizona (AZ), California (CA), Maine (ME), Minnesota (MN), and Texas (TX).
+- Create public records requests with a title, request text, state, target agency, date sent, and status.
+- View all requests with status badges, deadlines, and overdue/due-soon indicators.
+- Open an individual request detail page.
+- Supported states: Arizona (AZ), California (CA), Maine (ME), Minnesota (MN), and Texas (TX).
 - Save requests to Supabase when the project is configured, or use local browser preview mode when it is not.
-- **Statutory deadlines:** The application implements deadline calculations for five supported states:
-  - California (CA): 10 calendar days
-  - Maine (ME): 5 business days
-  - Texas (TX): 10 business days
-  - Arizona (AZ): No fixed numerical deadline in the implemented rule
-  - Minnesota (MN): No fixed numerical deadline in the implemented rule
+- Track request status transitions using the allowed workflow defined below.
+- Record status history in the `public.status_history` table.
+- Filter the request list by status and deadline flag.
+- All sample and seeded data is fictional and for testing only.
 
-All 11 automated unit tests passed. Manual retesting confirmed the calculated deadlines for California, Maine, and Texas.
+### Deadline behavior
 
-Arizona and Minnesota currently display "Pending research" when no numerical deadline is returned. This label needs clarification.
+The application currently supports these deadline rules:
 
-Older records created before the deadline rules were implemented may still contain NULL deadlines.
+- California (CA): 10 calendar days
+- Maine (ME): 5 business days
+- Texas (TX): 10 business days
+- Arizona (AZ): estimated deadline based on supported fixed-deadline states
+- Minnesota (MN): estimated deadline based on supported fixed-deadline states
 
-The statutory rules require legal and sponsor review before being relied upon for actual public records requests.
+Requests with a deadline before today are marked **Overdue** when their status is `Sent` or `Acknowledged`.
 
-Later-sprint features (not yet implemented): correspondence storage, user roles/access controls, and response intake.
+Requests with a deadline within the next 7 days are marked **Due Soon** when their status is `Sent` or `Acknowledged`.
+
+Requests with status `Draft`, `Fulfilled`, `Denied`, or `Appealed` are not flagged as overdue or due soon.
+
+Estimated deadlines are labeled as estimated and should not be treated as legal advice.
+
+### Current limitations
+
+- Authentication and final authenticated RLS policies are still pending the backend/auth merge.
+- Correspondence storage and response intake are not yet complete.
+- Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk.
+- All statutory deadline rules should receive sponsor/legal review before being relied upon for real public records requests.
+
+## Status workflow
+
+Requests can only move forward through the following allowed status transitions:
+
+| Current Status | Allowed Next Status |
+| --- | --- |
+| Draft | Sent |
+| Sent | Acknowledged, Fulfilled, Denied |
+| Acknowledged | Fulfilled, Denied |
+| Denied | Appealed |
+| Fulfilled | None (terminal) |
+| Appealed | None (terminal) |
+
+Backward transitions are not allowed.
+
+Status changes are recorded in the `public.status_history` table. Each history row stores the request ID, previous status, new status, timestamp, user who made the change when available, and an optional note.
+
+Existing requests are backfilled with an initial history row using `from_status = NULL` and their current status as `to_status`.
 
 ## Tech stack
 
@@ -79,10 +112,6 @@ Later-sprint features (not yet implemented): correspondence storage, user roles/
 
 5. To stop the server, press **Ctrl+C** in its terminal.
 
-### Seed the database
-
-From the project root, run this command to seed the local preview fixture with
-10 fake requests across five states and six statuses:
 ### Preview mode (no database credentials)
 
 If either Supabase environment variable is missing, the app displays a yellow preview-mode banner. It uses 10 built-in **fictional sample requests** from `lib/sampleData.js` and saves new preview requests in that browser's local storage. They are **not** shared with teammates or written to Supabase.
@@ -97,21 +126,6 @@ For a fresh *development-only* Supabase project:
 4. Add the `.env.local` values above and restart the development server.
 5. Create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
 
-#### Seed/sample data
-
-**Sprint 2 acceptance requirement:** a seed script must insert **exactly 10 fake requests** spanning **at least three states and three statuses** into the Supabase `requests` table. The list must show those records. This is assigned to the backend/scaffold story (US1).
-
-**Current limitation:** the reviewed repository snapshot has **no `npm run seed` script**. The 10 built-in examples in `lib/sampleData.js` appear only in browser preview mode and do **not** seed Supabase. **Do not run `npm run seed` yet**; it is not a working command in this snapshot.
-
-**Temporary manual test-data procedure (not a substitute for the required seed script):**
-
-1. Confirm the app is connected to the isolated development Supabase project.
-2. Open `/requests/new` locally or on the live site.
-3. Submit a **fictional** request with all required fields.
-4. Confirm the row appears under **Supabase → Table Editor → `public.requests`** and in the website’s request list.
-5. Repeat with different fictional states and statuses only if your team agrees to use the shared development database for test records.
-
-**When Nathan’s seed script is merged:** update this section with its actual command and prerequisites; run it on a clean test dataset, verify exactly 10 seeded rows, and note whether rerunning it creates duplicates or is idempotent.
 
 ## Data model: `public.requests`
 
@@ -126,6 +140,20 @@ For a fresh *development-only* Supabase project:
 | `deadline` | `date` | Nullable; calculated in app only when a verified rule exists |
 | `status` | `text` | Draft, Sent, Acknowledged, Fulfilled, Denied, or Appealed; default Draft |
 | `created_at` | `timestamptz` | Defaults to current timestamp |
+
+## Data model: `public.status_history`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key; generated automatically |
+| `request_id` | `uuid` | Required; references `public.requests.id` |
+| `from_status` | `text` | Previous status; nullable for the initial backfill row |
+| `to_status` | `text` | Required new status |
+| `changed_at` | `timestamptz` | Generated timestamp |
+| `changed_by` | `uuid` | Authenticated user ID when available |
+| `note` | `text` | Optional note about the status change |
+
+Each existing request receives an initial history row so that every request has at least one status-history record.
 
 ## Deployment: Netlify
 
@@ -171,26 +199,6 @@ contains no real names, child welfare data, or real agency correspondence.
 After setting the Supabase variables, run `supabase/schema.sql` in the Supabase
 SQL Editor to create the table and policies.
 
-## Data Model: `requests`
-
-| Field | Type | Notes |
-|---|---|---|
-| id | uuid | Primary key |
-| title | text | Required |
-| request_text | text | Required |
-| state | text | Two-letter code, required |
-| target_agency | text | Required |
-| date_sent | date | Required |
-| deadline | date | Auto-calculated, not editable |
-| status | text | Draft, Sent, Acknowledged, Fulfilled, Denied, Appealed (default: Draft) |
-| created_at | timestamp | Generated |
-
-## Deployment
-
-Every push to `main` deploys to production on Netlify. Every pull request gets a deploy preview.
-
-- **Production:** _TBD_
-- **Preview:** generated per PR
 
 ## Contributing
 

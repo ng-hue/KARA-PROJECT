@@ -15,6 +15,7 @@ import {
 import { FLAGGABLE_STATUSES, getRequestFlag, localToday } from "@/lib/deadlineFlags";
 import StatusBadge from "@/components/StatusBadge";
 import FlagBadge from "@/components/FlagBadge";
+import StatusHistoryPanel from "@/components/StatusHistoryPanel";
 
 function Field({ label, children }) {
   return (
@@ -143,6 +144,19 @@ export default function RequestDetailPage() {
               <h2 className="text-gray-500">Request Text</h2>
               <p className="mt-1 whitespace-pre-wrap">{request.request_text}</p>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <StatusHistoryPanel
+              requestId={request.id}
+              currentStatus={request.status}
+              onStatusChanged={(newStatus) =>
+                setRequest((current) => ({
+                  ...current,
+                  status: newStatus,
+                }))
+              }
+            />
           </div>
         </>
       )}
