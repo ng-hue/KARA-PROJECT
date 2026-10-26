@@ -5,6 +5,20 @@ import Link from "next/link";
 import { createRequest, validateRequest } from "@/lib/requests";
 import { DEFAULT_STATUS, STATES, STATUSES } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
+import {
+  DEADLINE_FOOTNOTE,
+  NOT_SUPPORTED_LABEL,
+  deadlineLabel,
+  getDeadlineInfo,
+} from "@/lib/deadlines";
+
+function savedDeadlineText(saved) {
+  const info = getDeadlineInfo(saved.state, saved.date_sent);
+  if (info.kind === "unsupported") return NOT_SUPPORTED_LABEL;
+  if (!info.date) return "not reported";
+  const prefix = info.kind === "estimated" ? "estimated " : "";
+  return `${prefix}${formatDate(info.date)} (${deadlineLabel(saved.state)})`;
+}
 
 const EMPTY = {
   title: "",
@@ -78,11 +92,9 @@ export default function NewRequestPage() {
           "{saved.title}" was saved with status {saved.status}.
         </p>
         <p className="mt-1 text-green-900">
-          Response deadline:{" "}
-          {saved.deadline
-            ? formatDate(saved.deadline)
-            : `pending research for ${saved.state}`}
+          Response deadline: {savedDeadlineText(saved)}
         </p>
+        <p className="mt-1 text-xs text-green-900">{DEADLINE_FOOTNOTE}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/requests"

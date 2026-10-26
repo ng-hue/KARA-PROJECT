@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "seed:supabase": "node scripts/seed.cjs --supabase",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "node scripts/seed.cjs"
+    "seed": "node scripts/seed.cjs",
+    "test": "node --test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
