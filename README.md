@@ -122,9 +122,10 @@ For a fresh *development-only* Supabase project:
 
 1. Open the Supabase SQL Editor.
 2. Review `supabase/schema.sql` before running it. It creates the `public.requests` table and enables row-level security (RLS).
-3. The schema includes anonymous read/insert policies intended **only for isolated fake-data development**. These policies permit anonymous access; replace them with authenticated, least-privilege policies before any public production use or sensitive data. If the table or policies already exist, coordinate with the team instead of blindly running the setup again.
+3. The schema removes the Sprint 2 anonymous read/insert policies and grants request access only to signed-in Supabase users. Review the policy changes before running the SQL against an existing project.
 4. Add the `.env.local` values above and restart the development server.
-5. Create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
+5. In Supabase Authentication settings, enable email/password sign-in, disable public sign-ups, and have an administrator create one sponsor account plus one account for each team member. Never put credentials in the repository or Jira.
+6. Sign in at `/login`, create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
 
 
 ## Data model: `public.requests`

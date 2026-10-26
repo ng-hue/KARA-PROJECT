@@ -96,3 +96,16 @@
 **Retest summary:** 3 unequivocal passes (CA, TX, ME); 2 conditional/UX follow-ups (AZ, MN); no observed mismatches with the current numerical calculation rules. Dates here are software expectations from the implemented unit-tested rules, **not independent legal validation**. For AZ/MN, `null` is appropriate to the coded no-fixed-date rules, but showing **Pending research** conflates a deliberate nonnumeric outcome with an unimplemented rule.
 
 **QA-001 disposition:** Partially fixed. Numeric deadline generation appears corrected for CA, TX, and ME in the updated test deployment. Do **not** erase original October 9 failures or claim the full statutory deadline feature is complete. Have the US4 owner confirm the legal source table and clarify the AZ/MN UI; retest on the team's official deployment after the reviewed changes reach `main`. Existing database rows with NULL deadlines are not automatically backfilled by new request-submission logic.
+
+---
+
+## Authentication acceptance tests
+
+Run after applying the authenticated policies in `supabase/schema.sql` and provisioning the sponsor/team accounts in Supabase Authentication. Use fictional data only.
+
+| ID | Test | Expected result |
+|---|---|---|
+| AUTH-01 | In a private window, visit `/`, `/requests`, `/requests/new`, and a request detail URL without a session. | Each protected route redirects to `/login`; the login page remains available. |
+| AUTH-02 | POST to the Supabase `requests` REST endpoint with only the anon key and no bearer session. | Supabase returns 401 or 403 and creates no row. Never use the service-role key. |
+| AUTH-03 | Sign in as the sponsor, create a fictional request, and view the list. | The new request appears while signed in. |
+| AUTH-04 | Sign out and revisit the request list and detail URL. | Both redirect to `/login` until signing in again. |
