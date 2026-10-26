@@ -38,7 +38,6 @@ Estimated deadlines are labeled as estimated and should not be treated as legal 
 
 ### Current limitations
 
-- Authentication and final authenticated RLS policies are still pending the backend/auth merge.
 - Correspondence storage and response intake are not yet complete.
 - Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk.
 - All statutory deadline rules should receive sponsor/legal review before being relied upon for real public records requests.
@@ -64,7 +63,7 @@ Existing requests are backfilled with an initial history row using `from_status 
 
 ## Tech stack
 
-- Next.js 16.4.0 / React 19
+- Next.js 16.4.3 / React 19
 - Tailwind CSS 4
 - Supabase (PostgreSQL)
 - Netlify (hosting)
@@ -111,6 +110,23 @@ Existing requests are backfilled with an initial history row using `from_status 
    On Windows PowerShell, `npm.cmd run dev` also works. Open **http://localhost:3000**.
 
 5. To stop the server, press **Ctrl+C** in its terminal.
+
+### Authentication
+
+The app uses Supabase Auth with email and password sign-in.
+
+To create a development user:
+
+1. Open the team Supabase project.
+2. Go to **Authentication → Users**.
+3. Click **Add user**.
+4. Create a user with an email address and password.
+5. Start the app and open `http://localhost:3000`.
+6. Sign in at `/login` with the account you created.
+
+Unauthenticated users are redirected to `/login`.
+
+Authenticated users can read, create, and update requests. Status-history records are also restricted to authenticated users through Supabase Row Level Security.
 
 ### Preview mode (no database credentials)
 
@@ -183,22 +199,9 @@ Use the same **public** project values as local development. They need to be ava
 
 The team's official Netlify project (`kprsite`) is connected to the GitHub repository `ng-hue/KARA-PROJECT`. Changes merged into `main` automatically trigger production deployments, and pull requests generate deploy previews.
 
-The separate testing project (`kara-public-records-tracker`) is deployed manually using the Netlify CLI. An authorized team member can publish local changes to this testing site using the commands below. Before deploying, verify that the local directory is linked to the correct Netlify project.
+The separate testing project (`kara-public-records-tracker`) is deployed manually using the Netlify CLI. An authorized team member can publish local changes to this testing site. Before deploying, verify that the local directory is linked to the correct Netlify project.
 
-```bash
-npm run seed
-```
-
-This command writes the synthetic requests to `lib/sampleData.json`. It does not
-require Supabase credentials or make a network connection. Run `npm run dev` to
-view the requests in preview mode. Running the seed command again regenerates
-the same 10 fixtures; it does not clear requests already saved in browser storage.
-
-All seeded data uses fictional agency labels and test-only request text. It
-contains no real names, child welfare data, or real agency correspondence.
-
-After setting the Supabase variables, run `supabase/schema.sql` in the Supabase
-SQL Editor to create the table and policies.
+After setting the Supabase variables, run `supabase/schema.sql` in the Supabase SQL Editor to create the `requests` table and its access policies. Run `supabase/status_history.sql` to create the status-history table, status-change function, backfill records, and its authenticated RLS policies.
 
 
 ## Contributing
@@ -211,7 +214,7 @@ SQL Editor to create the table and policies.
 
 ## Testing
 
-For unit testing we are currently using the built 'node:test'. This might need to change in the future. 
+For unit testing, the project currently uses Node's built-in `node:test` test runner.
 
 To run the unit tests:
 
@@ -226,11 +229,17 @@ To add to the unit tests:
 
 You might see a [MODULE_TYPELESS_PACKAGE_JSON] error in your console, you can safely ignore it. 
 
+Current Sprint 3 automated test result:
+
+- 52 tests
+- 52 passed
+- 0 failed
+
 ## Risk management
 
 | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- |
-| Repository transfer breaks the Netlify deploy | Medium | High | Do US1 on Monday October 12 before any other code lands. Relink Netlify the same day. If the deploy is still broken on Tuesday, tell the sponsor; do not work around it with a second site. |
+| Repository transfer breaks the Netlify deploy | Medium | High | Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk. Confirm the live site is stable before transferring and relink Netlify after the transfer. |
 | Row level security blocks the app itself | High | Medium | Write the RLS policies first, test with the anon key and an authenticated session before merging. Keep the seed script on the service role key. |
 | Team locked out of its own deployed app | Low | High | Sponsor account plus five team accounts created in US2. Supabase dashboard password reset is the fallback. Credentials never go in the repository. |
 | Backfilling status history on seeded rows is skipped | Medium | Low | US5 includes the backfill as a task. US7 checklist verifies every seeded request shows at least one history row. |

@@ -6,6 +6,7 @@ import {
   listStatusHistory,
 } from "../lib/statusHistory";
 import { getAllowedNextStatuses } from "../lib/statusTransitions";
+import { getSupabase } from "../lib/supabase";
 
 export default function StatusHistoryPanel({
   requestId,
@@ -17,6 +18,8 @@ export default function StatusHistoryPanel({
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
 
   const allowedStatuses = getAllowedNextStatuses(currentStatus);
 
@@ -31,6 +34,17 @@ export default function StatusHistoryPanel({
 
   useEffect(() => {
     loadHistory();
+
+    getSupabase()
+      .auth.getUser()
+      .then(({ data }) => {
+        setCurrentUserId(data.user?.id || null);
+        setCurrentUserEmail(data.user?.email || "");
+      })
+      .catch(() => {
+        setCurrentUserId(null);
+        setCurrentUserEmail("");
+      });
   }, [requestId]);
 
   async function handleSubmit(event) {
@@ -66,10 +80,23 @@ export default function StatusHistoryPanel({
     }
   }
 
+  function changedByLabel(entry) {
+    if (!entry.changed_by) {
+      return "System";
+    }
+
+    if (entry.changed_by === currentUserId) {
+      return currentUserEmail || "You";
+    }
+
+    return `User ${entry.changed_by.slice(0, 8)}`;
+  }
+
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-6">
       <div className="mb-6">
         <h2 className="text-lg font-semibold">Status</h2>
+
         <p className="mt-1 text-sm text-gray-600">
           Current status:{" "}
           <span className="font-semibold text-gray-900">
@@ -113,7 +140,10 @@ export default function StatusHistoryPanel({
               htmlFor="status-note"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
-              Note <span className="font-normal text-gray-500">(optional)</span>
+              Note{" "}
+              <span className="font-normal text-gray-500">
+                (optional)
+              </span>
             </label>
 
             <textarea
@@ -149,7 +179,9 @@ export default function StatusHistoryPanel({
       ) : null}
 
       <div className="mt-8 border-t border-gray-100 pt-6">
-        <h3 className="text-lg font-semibold">Status History</h3>
+        <h3 className="text-lg font-semibold">
+          Status History
+        </h3>
 
         {history.length === 0 ? (
           <p className="mt-2 text-sm text-gray-500">
@@ -158,7 +190,10 @@ export default function StatusHistoryPanel({
         ) : (
           <ul className="mt-4 divide-y divide-gray-100">
             {history.map((entry) => (
-              <li key={entry.id} className="py-4 first:pt-0 last:pb-0">
+              <li
+                key={entry.id}
+                className="py-4 first:pt-0 last:pb-0"
+              >
                 <p className="text-sm font-semibold text-gray-900">
                   {entry.from_status
                     ? `${entry.from_status} → ${entry.to_status}`
@@ -166,11 +201,13 @@ export default function StatusHistoryPanel({
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  {new Date(entry.changed_at).toLocaleString()}
+                  {new Date(
+                    entry.changed_at
+                  ).toLocaleString()}
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  Changed by: {entry.changed_by || "System"}
+                  Changed by: {changedByLabel(entry)}
                 </p>
 
                 {entry.note ? (

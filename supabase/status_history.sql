@@ -49,6 +49,39 @@ create index if not exists status_history_changed_at_idx
 -- Enable row level security.
 alter table public.status_history enable row level security;
 
+-- Match the authenticated-only access model from US2.
+do $$
+declare
+  policy_name text;
+begin
+  for policy_name in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'status_history'
+  loop
+    execute format(
+      'drop policy %I on public.status_history',
+      policy_name
+    );
+  end loop;
+end
+$$;
+
+revoke all on public.status_history from anon;
+grant select, insert on public.status_history to authenticated;
+
+create policy "Authenticated users can read status history"
+  on public.status_history
+  for select
+  to authenticated
+  using (true);
+
+create policy "Authenticated users can create status history"
+  on public.status_history
+  for insert
+  to authenticated
+  with check (changed_by = auth.uid());
+
 -- Normalize older rows that were created without a status.
 update public.requests
 set status = 'Draft'
@@ -142,3 +175,9 @@ begin
   return v_history;
 end;
 $$;
+
+revoke execute on function public.change_request_status(uuid, text, text)
+  from public, anon;
+
+grant execute on function public.change_request_status(uuid, text, text)
+  to authenticated;
