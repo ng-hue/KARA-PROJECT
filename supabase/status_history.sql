@@ -109,6 +109,42 @@ where not exists (
   where h.request_id = r.id
 );
 
+-- Automatically create the initial status-history row
+-- whenever a new request is created.
+create or replace function public.create_initial_status_history()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  insert into public.status_history (
+    request_id,
+    from_status,
+    to_status,
+    changed_by,
+    note
+  )
+  values (
+    new.id,
+    null,
+    coalesce(new.status, 'Draft'),
+    auth.uid(),
+    'Request created'
+  );
+
+  return new;
+end;
+$$;
+
+drop trigger if exists requests_initial_status_history
+  on public.requests;
+
+create trigger requests_initial_status_history
+after insert on public.requests
+for each row
+execute function public.create_initial_status_history();
+
 -- Change a request's status and record the change atomically.
 create or replace function public.change_request_status(
   p_request_id uuid,
