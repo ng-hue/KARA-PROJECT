@@ -136,7 +136,7 @@ function RequestsList() {
             {rows.map((r) => (
               <li key={r.id} className="rounded-lg border border-gray-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium">{r.title}</p>
+                  <p className="font-medium"><Link href={`/requests/${r.id}`} className="text-[#007a72] hover:underline">{r.title}</Link></p>
                   <div className="flex flex-wrap justify-end gap-1">
                     <FlagBadge flag={r.flag} />
                     <StatusBadge status={r.status} />
@@ -176,7 +176,7 @@ function RequestsList() {
               <tbody className="divide-y divide-gray-100">
                 {rows.map((r) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 font-medium">{r.title}</td>
+                    <td className="px-4 py-3 font-medium"><Link href={`/requests/${r.id}`} className="text-[#007a72] hover:underline">{r.title}</Link></td>
                     <td className="px-4 py-3">{r.state}</td>
                     <td className="px-4 py-3">{r.target_agency}</td>
                     <td className="whitespace-nowrap px-4 py-3">{formatDate(r.date_sent)}</td>
