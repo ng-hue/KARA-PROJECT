@@ -27,12 +27,7 @@ function LoginForm() {
         return;
       }
 
-      const requestedPath = searchParams.get("next");
-      const destination =
-        requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
-          ? requestedPath
-          : "/requests";
-      router.replace(destination);
+      router.replace("/requests");
       router.refresh();
     } catch (err) {
       setError(err.message);

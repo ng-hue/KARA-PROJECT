@@ -16,11 +16,22 @@ create table if not exists public.requests (
 
 alter table public.requests enable row level security;
 
-drop policy if exists "Sprint 2 read" on public.requests;
-drop policy if exists "Sprint 2 insert" on public.requests;
-drop policy if exists "Authenticated users can read requests" on public.requests;
-drop policy if exists "Authenticated users can create requests" on public.requests;
-drop policy if exists "Authenticated users can update requests" on public.requests;
+do $$
+declare
+  policy_name text;
+begin
+  for policy_name in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'requests'
+  loop
+    execute format('drop policy %I on public.requests', policy_name);
+  end loop;
+end
+$$;
+
+revoke all on public.requests from anon;
+grant select, insert, update on public.requests to authenticated;
 
 create policy "Authenticated users can read requests"
   on public.requests for select to authenticated using (true);
