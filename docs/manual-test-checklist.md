@@ -97,6 +97,106 @@
 
 **QA-001 disposition:** Partially fixed. Numeric deadline generation appears corrected for CA, TX, and ME in the updated test deployment. Do **not** erase original October 9 failures or claim the full statutory deadline feature is complete. Have the US4 owner confirm the legal source table and clarify the AZ/MN UI; retest on the team's official deployment after the reviewed changes reach `main`. Existing database rows with NULL deadlines are not automatically backfilled by new request-submission logic.
 
+
+---
+
+## Sprint 3 test checklist (US7, SCRUM-164)
+
+**Owner:** Daniel Anderson
+**Scheduled run:** on the live site before the October 28 demo (SCRUM-187)
+**Environment:** Netlify production, https://kprsite.netlify.app, after the repository transfer in US1
+**Database:** shared Supabase project, `public.requests` and `public.status_history`
+**Data policy:** fictional test data only; no real child welfare records, names, or correspondence.
+
+### Before you start
+
+1. Run `npm run seed:supabase` from `main` the same day. Seeded deadlines are relative to the day the seed runs, so the due-soon rows drift into overdue if the seed is older than a few days.
+2. Ask the team whether any older hand-entered test requests in the shared database are Sent or Acknowledged and past their deadline. Those rows also carry the Overdue badge and change the US6 counts. Record them in the Notes column rather than deleting them.
+3. Have the sponsor account and one team account ready (US2). Never write passwords in this file or in Jira.
+
+### How to record results
+
+- **Status:** PASS, FAIL, or NOT RUN. Do not mark a case PASS unless you observed it.
+- **Date:** the date you ran the case.
+- **Jira bug:** every FAIL gets a Jira bug linked to its user story. Put the key here, for example SCRUM-200.
+- **Actual result:** what you saw, in a few words. Attach screenshots to the Jira bug, not to this file.
+
+### Execution summary
+
+| Metric | Result |
+|---|---:|
+| Total cases | 27 |
+| Passed | |
+| Failed | |
+| Not run | 27 |
+
+### US1: Repository in the KARA GitHub organization (SCRUM-158, Nathan)
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-18 | Push a one-line README change to `main` in the organization repository. Watch Netlify. | Netlify shows a successful production deploy within 10 minutes of the push. | | NOT RUN | | |
+| TC-19 | After TC-18, open the live URL. | The live site reflects the README change's deploy (new deploy ID or timestamp in Netlify). | | NOT RUN | | |
+| TC-20 | Open the old repository URL, https://github.com/ng-hue/KARA-PROJECT. | It redirects to the repository in the KARA organization. | | NOT RUN | | |
+| TC-21 | Open a pull request in the organization repository. | Netlify posts a deploy preview on the pull request. | | NOT RUN | | |
+
+### US2: Sign in before creating or changing a request (SCRUM-159, Nathan)
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-22 | In a private window with no session, open `/requests`, `/requests/new`, and a request detail page. | Every route other than `/login` redirects to `/login`. | | NOT RUN | | |
+| TC-23 | With no session, send a direct POST with the anon key to the `requests` table (Supabase REST API). | The request is rejected with 401 or 403. No row is created. | | NOT RUN | | |
+| TC-24 | Sign in with the sponsor account. | User lands on the request list. | | NOT RUN | | |
+| TC-25 | While signed in, create a fictional request. | The request appears in the list. | | NOT RUN | | |
+| TC-26 | Sign out, then open `/requests` again. | The list is not reachable; the browser is redirected to `/login`. | | NOT RUN | | |
+| TC-27 | After row level security is enabled, run `npm run seed:supabase`. | The seed still succeeds with the service role key and reports 10 rows. | | NOT RUN | | |
+
+### US3: Request detail page (SCRUM-160, Angela)
+
+Use three seeded requests with status Sent or Acknowledged, one from each of CA, ME, and TX. Closed requests (Fulfilled, Denied, Appealed) show no countdown by design.
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-28 | From the list, click a request title. | The detail page for that request opens. It has a back link to the list. | | NOT RUN | | |
+| TC-29 | Compare the detail page with the same row in Supabase Table Editor. | All nine fields render (title, request text, state, target agency, date sent, deadline, status, created, request ID) and match the database row. | | NOT RUN | | |
+| TC-30 | For each of the three requests, count the days from today to the deadline on a calendar. | Days Remaining equals deadline minus today's date for all three. The summary line reads "Due in N days" or "N days overdue" to match. | | NOT RUN | | |
+| TC-31 | Open a seeded Fulfilled request whose deadline has passed. | No "days overdue" line and no Overdue badge (matches the list, risk R7). | | NOT RUN | | |
+
+### US4: Edit a request after it is created (SCRUM-161, Angela)
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-32 | Note the request count in the list. Open a seeded CA request (10 calendar days), edit it, change the state to TX (10 business days), and save. | The detail page deadline changes to date sent plus 10 business days. | | NOT RUN | | |
+| TC-33 | Return to the list. | The request count is unchanged. No duplicate row appears. | | NOT RUN | | |
+| TC-34 | Open the edit form. | Deadline is read-only. Status is not editable on this form. | | NOT RUN | | |
+| TC-35 | Check the edited row in Supabase. | `updated_at` is set to the time of the save. | | NOT RUN | | |
+
+### US5: Status changes with a dated history (SCRUM-162, Tommy)
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-36 | Open the seeded Draft request. Change status to Sent with no note. Then change to Acknowledged with the note "Agency acknowledged by email". | The detail page shows 2 history rows plus the "Request created" row, newest first, with the note on the Acknowledged row only. | | NOT RUN | | |
+| TC-37 | On a Sent request, open the status control. | It offers Acknowledged, Fulfilled, and Denied. It never offers Draft or Appealed. | | NOT RUN | | |
+| TC-38 | On a Fulfilled request, open the status control. | No further status changes are offered. | | NOT RUN | | |
+| TC-39 | In Supabase, check `status_history` for each of the 10 seeded requests (risk R4). | Every seeded request has at least one history row. | | NOT RUN | | |
+
+### US6: Overdue and due-soon flags on the list (SCRUM-163, Daniel)
+
+| ID | Test performed | Expected result | Actual result | Status | Date | Jira bug |
+|---|---|---|---|---|---|---|
+| TC-40 | Open `/requests` after seeding. | Exactly the 3 seeded overdue rows carry the Overdue badge. Exactly the 3 seeded due-soon rows carry the Due Soon badge. None of the 3 fulfilled-past-deadline rows carries either. | | NOT RUN | | |
+| TC-41 | Select the Overdue filter. | The list shows 3 rows. | | NOT RUN | | |
+| TC-42 | With the Overdue filter and the Sent status filter selected, refresh the page. | Both filters are still applied after the refresh, and the URL contains them. | | NOT RUN | | |
+| TC-43 | Clear the filters and check the order. | Overdue rows come first, then the rest by deadline (earliest first). Draft rows are last. | | NOT RUN | | |
+| TC-44 | Open one overdue request and one due-soon request from the list. | The detail page shows the same badge as the list row (risk R7). | | NOT RUN | | |
+
+### Sign-off
+
+- [ ] Seed run on the day of testing, with the date recorded above.
+- [ ] Every case TC-18 to TC-44 has PASS or FAIL and a date.
+- [ ] Every FAIL has a linked Jira bug.
+- [ ] Execution summary updated.
+- [ ] A teammate reviewed the results.
+
 ---
 
 ## Authentication acceptance tests
@@ -109,3 +209,4 @@ Run after applying the authenticated policies in `supabase/schema.sql` and provi
 | AUTH-02 | POST to the Supabase `requests` REST endpoint with only the anon key and no bearer session. | Supabase returns 401 or 403 and creates no row. Never use the service-role key. |
 | AUTH-03 | Sign in as the sponsor, create a fictional request, and view the list. | The new request appears while signed in. |
 | AUTH-04 | Sign out and revisit the request list and detail URL. | Both redirect to `/login` until signing in again. |
+
