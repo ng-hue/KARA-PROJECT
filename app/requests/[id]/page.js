@@ -71,9 +71,14 @@ export default function RequestDetailPage() {
 
   return (
     <div>
-      <Link href="/requests" className="text-sm text-[#007a72] underline">
-        Back to all requests
-      </Link>
+      <div className="flex gap-4">
+        <Link href="/requests" className="text-sm text-[#007a72] underline">
+          Back to all requests
+        </Link>
+        <Link href={`/requests/${id}/edit`} className="text-sm text-[#007a72] underline">
+          Edit request
+        </Link>
+      </div>
 
       {error ? (
         <p className="mt-4 rounded-md bg-red-50 p-4 text-red-800">
