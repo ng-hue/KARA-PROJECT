@@ -143,6 +143,38 @@ For a fresh *development-only* Supabase project:
 5. In Supabase Authentication settings, enable email/password sign-in, disable public sign-ups, and have an administrator create one sponsor account plus one account for each team member. Never put credentials in the repository or Jira.
 6. Sign in at `/login`, create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
 
+### Seed the database
+
+`npm run seed` writes 10 fictional requests into the shared Supabase `requests` table, plus one "Request created" row in `status_history` for each. Everyone who opens the app, including the live site, sees them. Tell the team before you run it.
+
+The seeded requests cover the US6 test scenario: 3 overdue, 3 due soon, 3 fulfilled past their deadline, and 1 draft.
+
+1. Get the service role key from the Supabase project settings (**Project Settings → API Keys**), or ask the project administrator.
+2. Add it to `.env.local` on its own line:
+
+   ```dotenv
+   SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+   ```
+
+   This is the one exception to step 3 above. The seed script reads this key on your machine only; the app never uses it. Never give it the `NEXT_PUBLIC_` prefix, never add it to Netlify, and never commit it.
+3. Run:
+
+   ```bash
+   npm run seed
+   ```
+
+   It prints the number of requests upserted and status history rows added.
+
+Notes:
+
+- Deadlines are counted from the day you run the seed, so the due-soon rows become overdue after a few days. Rerun the seed on the day you test or demo. Set `SEED_TODAY=YYYY-MM-DD` to seed as of a fixed date.
+- Rerunning is safe. Seeded rows have fixed IDs, so the seed updates the same 10 requests instead of adding duplicates, and it never touches any other row. Status history rows are only added for seeded requests that have none.
+- To remove the seeded requests, run this in the Supabase SQL Editor. Their status history rows are deleted with them.
+
+  ```sql
+  delete from public.requests where id::text like '00000000-0000-4000-8000-%';
+  ```
+
 
 ## Data model: `public.requests`
 
