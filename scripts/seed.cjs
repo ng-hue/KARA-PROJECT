@@ -1,8 +1,6 @@
-const fs = require("node:fs");
 const path = require("node:path");
 
-// Writes 10 fake requests to lib/sampleData.json for preview mode, and with
-// --supabase also upserts them into the Supabase requests table.
+// Upserts 10 fake requests into the shared Supabase requests table.
 // Covers the US6 test scenario (SCRUM-163): 3 overdue, 3 due soon, and
 // 3 fulfilled past their deadline, plus 1 draft.
 //
@@ -10,12 +8,10 @@ const path = require("node:path");
 // a demo or the due-soon rows drift into overdue. Set SEED_TODAY=YYYY-MM-DD
 // to seed as of a fixed date.
 //
-// Supabase seeding uses the service role key (risk R2), read from
-// SUPABASE_SERVICE_ROLE_KEY in .env.local. Never prefix it with NEXT_PUBLIC_.
+// Uses the service role key (risk R2), read from SUPABASE_SERVICE_ROLE_KEY in
+// .env.local. Never prefix it with NEXT_PUBLIC_.
 // Seeded rows have fixed ids, so rerunning updates the same 10 rows instead
 // of adding duplicates. Other rows are never touched.
-
-const toSupabase = process.argv.includes("--supabase");
 
 // Fixed ids for the seeded rows: 00000000-0000-4000-8000-000000000001 to ...010.
 const seedId = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
@@ -62,7 +58,6 @@ async function main() {
       date_sent: dateSent,
       status: s.status,
       deadline: s.status === "Draft" ? null : calculateDeadline(s.state, dateSent),
-      created_at: `${dateSent}T12:00:00Z`,
     };
   });
 
@@ -88,13 +83,11 @@ async function main() {
     );
   }
 
-  const outputPath = path.join(__dirname, "..", "lib", "sampleData.json");
-  fs.writeFileSync(outputPath, `${JSON.stringify(requests, null, 2)}\n`);
   console.log(
-    `Seeded ${requests.length} fake requests (${stateCount} states, ${statusCount} statuses) as of ${today} into ${path.relative(process.cwd(), outputPath)}.`
+    `Built ${requests.length} fake requests (${stateCount} states, ${statusCount} statuses) as of ${today}.`
   );
 
-  if (toSupabase) await seedSupabase(requests);
+  await seedSupabase(requests);
 }
 
 async function seedSupabase(requests) {
@@ -106,7 +99,7 @@ async function seedSupabase(requests) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
     throw new Error(
-      "Supabase seeding needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+      "The seed needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
     );
   }
 
@@ -115,7 +108,7 @@ async function seedSupabase(requests) {
   const api = restClient(url, serviceKey);
 
   // created_at is left to the database default.
-  const rows = requests.map(({ created_at, ...row }) => row);
+  const rows = requests;
   const upsert = await api("POST", "requests?on_conflict=id", rows, {
     Prefer: "resolution=merge-duplicates,return=minimal",
   });
