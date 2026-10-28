@@ -2,10 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import RequestForm from "@/components/RequestForm";
 import { createRequest } from "@/lib/requests";
 import { DEFAULT_STATUS } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
-import RequestForm from "@/components/RequestForm";
+import {
+  DEADLINE_FOOTNOTE,
+  NOT_SUPPORTED_LABEL,
+  deadlineLabel,
+  getDeadlineInfo,
+} from "@/lib/deadlines";
+
+function savedDeadlineText(saved) {
+  const info = getDeadlineInfo(saved.state, saved.date_sent);
+
+  if (info.kind === "unsupported") {
+    return NOT_SUPPORTED_LABEL;
+  }
+
+  if (!info.date) {
+    return "not reported";
+  }
+
+  const prefix = info.kind === "estimated" ? "estimated " : "";
+
+  return `${prefix}${formatDate(info.date)} (${deadlineLabel(saved.state)})`;
+}
 
 const EMPTY = {
   title: "",
@@ -26,16 +48,22 @@ export default function NewRequestPage() {
   if (saved) {
     return (
       <div className="max-w-xl rounded-lg border border-green-200 bg-green-50 p-6">
-        <h1 className="text-xl font-semibold text-green-900">Request saved</h1>
+        <h1 className="text-xl font-semibold text-green-900">
+          Request saved
+        </h1>
+
         <p className="mt-2 text-green-900">
-          "{saved.title}" was saved with status {saved.status}.
+          &quot;{saved.title}&quot; was saved with status {saved.status}.
         </p>
+
         <p className="mt-1 text-green-900">
-          Response deadline:{" "}
-          {saved.deadline
-            ? formatDate(saved.deadline)
-            : `pending research for ${saved.state}`}
+          Response deadline: {savedDeadlineText(saved)}
         </p>
+
+        <p className="mt-1 text-xs text-green-900">
+          {DEADLINE_FOOTNOTE}
+        </p>
+
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/requests"
@@ -43,6 +71,7 @@ export default function NewRequestPage() {
           >
             View All Requests
           </Link>
+
           <button
             onClick={() => setSaved(null)}
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium"
@@ -56,11 +85,18 @@ export default function NewRequestPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-semibold">New Request</h1>
+      <h1 className="text-2xl font-semibold">
+        New Request
+      </h1>
+
       <p className="mt-1 text-sm text-gray-600">
         The response deadline is calculated from the state and date sent.
       </p>
-      <RequestForm initialValues={EMPTY} onSubmit={handleCreate} />
+
+      <RequestForm
+        initialValues={EMPTY}
+        onSubmit={handleCreate}
+      />
     </div>
   );
 }

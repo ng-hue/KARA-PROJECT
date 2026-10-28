@@ -16,7 +16,26 @@ create table if not exists public.requests (
 
 alter table public.requests enable row level security;
 
--- Temporary for Sprint 2: anyone with the anon key can read and add requests.
--- Replace when roles and access (EPIC E4) are built.
-create policy "Sprint 2 read" on public.requests for select to anon using (true);
-create policy "Sprint 2 insert" on public.requests for insert to anon with check (true);
+do $$
+declare
+  policy_name text;
+begin
+  for policy_name in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'requests'
+  loop
+    execute format('drop policy %I on public.requests', policy_name);
+  end loop;
+end
+$$;
+
+revoke all on public.requests from anon;
+grant select, insert, update on public.requests to authenticated;
+
+create policy "Authenticated users can read requests"
+  on public.requests for select to authenticated using (true);
+create policy "Authenticated users can create requests"
+  on public.requests for insert to authenticated with check (true);
+create policy "Authenticated users can update requests"
+  on public.requests for update to authenticated using (true) with check (true);
