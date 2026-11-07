@@ -145,9 +145,9 @@ For a fresh *development-only* Supabase project:
 
 ### Seed the database
 
-`npm run seed` writes 10 fictional requests into the shared Supabase `requests` table, plus one "Request created" row in `status_history` for each. Everyone who opens the app, including the live site, sees them. Tell the team before you run it.
+`npm run seed` writes 10 fictional requests into the shared Supabase `requests` table, plus one "Request created" row in `status_history` for each and 23 fictional correspondence entries. Everyone who opens the app, including the live site, sees them. Tell the team before you run it.
 
-The seeded requests cover the US6 test scenario: 3 overdue, 3 due soon, 3 fulfilled past their deadline, and 1 draft.
+The seeded requests cover the US6 test scenario: 3 overdue, 3 due soon, 3 fulfilled past their deadline, and 1 draft. Every seeded request has at least 2 correspondence entries with at least 1 in each direction; the 3 fulfilled requests have 3 entries on 3 different dates. If `supabase/correspondence.sql` has not been run yet, the seed skips the correspondence entries and says so.
 
 1. Get the service role key from the Supabase project settings (**Project Settings → API Keys**), or ask the project administrator.
 2. Add it to `.env.local` on its own line:
@@ -163,13 +163,13 @@ The seeded requests cover the US6 test scenario: 3 overdue, 3 due soon, 3 fulfil
    npm run seed
    ```
 
-   It prints the number of requests upserted and status history rows added.
+   It prints the number of requests upserted, status history rows added, and correspondence entries upserted.
 
 Notes:
 
 - Deadlines are counted from the day you run the seed, so the due-soon rows become overdue after a few days. Rerun the seed on the day you test or demo. Set `SEED_TODAY=YYYY-MM-DD` to seed as of a fixed date.
 - Rerunning is safe. Seeded rows have fixed IDs, so the seed updates the same 10 requests instead of adding duplicates, and it never touches any other row. Status history rows are only added for seeded requests that have none.
-- To remove the seeded requests, run this in the Supabase SQL Editor. Their status history rows are deleted with them.
+- To remove the seeded requests, run this in the Supabase SQL Editor. Their status history rows and correspondence entries are deleted with them.
 
   ```sql
   delete from public.requests where id::text like '00000000-0000-4000-8000-%';
@@ -204,6 +204,22 @@ Notes:
 
 Each existing request receives an initial history row so that every request has at least one status-history record.
 
+## Data model: `public.correspondence`
+
+One row per email, letter, or response file exchanged with an agency about a request (S4 US2). Field names follow `docs/correspondence-entry-design-note.md`; the Master Fields List check is still pending there. Signed-in users can read and add entries; the anon key has no access.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key; generated automatically |
+| `request_id` | `uuid` | Required; references `public.requests.id`; deleted with its request |
+| `direction` | `text` | Required; `outgoing` or `incoming` |
+| `correspondence_date` | `date` | Required; the date on the message, not the date it was entered |
+| `sender` | `text` | Required; the person or office that sent it |
+| `summary` | `text` | Required; the entry form limits it to 600 characters (proposed, awaiting sponsor sign-off) |
+| `attachment_ref` | `text` | Optional; storage path of an attached file (S4 US3) |
+| `created_by` | `uuid` | Signed-in user who saved the entry; null for seeded rows |
+| `created_at` | `timestamptz` | Generated timestamp |
+
 ## Deployment: Netlify
 
 - **Production site:** https://kprsite.netlify.app
@@ -234,6 +250,8 @@ The team's official Netlify project (`kprsite`) is connected to the GitHub repos
 The separate testing project (`kara-public-records-tracker`) is deployed manually using the Netlify CLI. An authorized team member can publish local changes to this testing site. Before deploying, verify that the local directory is linked to the correct Netlify project.
 
 After setting the Supabase variables, run `supabase/schema.sql` in the Supabase SQL Editor to create the `requests` table and its access policies. Run `supabase/status_history.sql` to create the status-history table, status-change function, backfill records, and its authenticated RLS policies.
+
+Then run `supabase/correspondence.sql` to create the correspondence table and its authenticated RLS policies. It is safe to rerun.
 
 
 ## Contributing
