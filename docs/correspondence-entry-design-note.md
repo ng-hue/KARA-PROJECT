@@ -45,3 +45,33 @@ Seeded fake data only this semester. Summaries never name or describe an individ
 ## Before Build
 
 Check the field names above against the Master Fields List so they line up with KARA ELLA ahead of the spring integration.
+
+## Master Fields List Check (SCRUM-208)
+
+**Status:** Pending. The team does not have the Master Fields List yet. Requested from the sponsor; date requested: [date].
+
+Sprint 4 adds one field the note above does not list: `created_by`, the signed-in user who saved the entry, to match `status_history.changed_by` (SCRUM-209).
+
+When the list arrives, fill in the last three columns for every row. Leave a cell as "Pending" until it is checked; do not guess a name.
+
+| Field (this note) | Type | Master Fields List name | Matches? | Rename or notes |
+|---|---|---|---|---|
+| id | uuid | Pending | Pending | |
+| request_id | uuid | Pending | Pending | |
+| direction | text (outgoing, incoming) | Pending | Pending | Also check the two allowed values. |
+| correspondence_date | date | Pending | Pending | |
+| sender | text | Pending | Pending | |
+| summary | text | Pending | Pending | Proposed 600 character cap awaits sponsor sign-off. |
+| attachment_ref | text | Pending | Pending | |
+| created_by | uuid | Pending | Pending | Added in Sprint 4. |
+| created_at | timestamptz | Pending | Pending | |
+
+**How to complete the check**
+
+1. For each field, find the matching entry in the Master Fields List and record its exact name.
+2. Mark Matches? as Yes, or No with the Master Fields List name to use instead.
+3. Record any field the Master Fields List requires for correspondence that this note does not have. Do not add it to the table without sponsor approval.
+4. If any name changes, update the Fields table above, `supabase/correspondence.sql`, the entry form, and the seed script in the same pull request.
+5. Change Status to Complete with the date and the version or date of the Master Fields List used.
+
+**Until the list arrives:** the table, form, and seed are built with the names in this note (risk R6, SCRUM-203). Renaming a column before real data exists is a small change, so the build is not blocked. Record that the check was still pending in the pull request that adds the table.
