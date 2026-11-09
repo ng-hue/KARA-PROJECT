@@ -16,7 +16,7 @@ import { FLAGGABLE_STATUSES, getRequestFlag, localToday } from "@/lib/deadlineFl
 import StatusBadge from "@/components/StatusBadge";
 import FlagBadge from "@/components/FlagBadge";
 import StatusHistoryPanel from "@/components/StatusHistoryPanel";
-import CorrespondenceForm from "@/components/CorrespondenceForm";
+import CorrespondenceSection from "@/components/CorrespondenceSection";
 
 function Field({ label, children }) {
   return (
@@ -166,7 +166,7 @@ export default function RequestDetailPage() {
           </div>
 
           <div className="mt-6">
-            <CorrespondenceForm requestId={request.id} />
+            <CorrespondenceSection requestId={request.id} />
           </div>
         </>
       )}
