@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   DIRECTIONS,
   SUMMARY_MAX_LENGTH,
   validateCorrespondence,
 } from "@/lib/correspondenceRules";
-import {
-  createCorrespondence,
-  createSignedAttachmentUrl,
-  listCorrespondence,
-} from "@/lib/correspondence";
+import { createCorrespondence } from "@/lib/correspondence";
 import {
   ATTACHMENT_ACCEPT,
   formatFileSize,
@@ -75,29 +71,9 @@ export default function CorrespondenceForm({
   const [attachment, setAttachment] = useState(null);
   const [attachmentError, setAttachmentError] = useState("");
   const [errors, setErrors] = useState({});
-  const [entries, setEntries] = useState([]);
-  const [entriesError, setEntriesError] = useState("");
-  const [openingAttachmentId, setOpeningAttachmentId] = useState("");
-  const [attachmentOpenError, setAttachmentOpenError] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
-
-  useEffect(() => {
-    let active = true;
-
-    listCorrespondence(requestId)
-      .then((data) => {
-        if (active) setEntries(data);
-      })
-      .catch((err) => {
-        if (active) setEntriesError(err.message);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [requestId]);
 
   function update(e) {
     const { name, value } = e.target;
@@ -153,13 +129,6 @@ export default function CorrespondenceForm({
         attachment
       );
 
-      setEntries((current) =>
-        [...current, saved].sort(
-          (a, b) =>
-            b.correspondence_date.localeCompare(a.correspondence_date) ||
-            b.created_at.localeCompare(a.created_at)
-        )
-      );
       setValues(EMPTY);
       setAttachment(null);
       setAttachmentError("");
@@ -179,29 +148,6 @@ export default function CorrespondenceForm({
       setSaveError(err.message);
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleOpenAttachment(entry) {
-    setAttachmentOpenError("");
-    const openedWindow = window.open("about:blank", "_blank");
-
-    if (!openedWindow) {
-      setAttachmentOpenError("Allow pop-ups to open the attachment.");
-      return;
-    }
-
-    openedWindow.opener = null;
-    setOpeningAttachmentId(entry.id);
-
-    try {
-      const signedUrl = await createSignedAttachmentUrl(entry.attachment_ref);
-      openedWindow.location.replace(signedUrl);
-    } catch (err) {
-      openedWindow.close();
-      setAttachmentOpenError(err.message);
-    } finally {
-      setOpeningAttachmentId("");
     }
   }
 
@@ -375,52 +321,6 @@ export default function CorrespondenceForm({
           {saving ? "Saving..." : "Save Entry"}
         </button>
       </form>
-
-      <div className="mt-8 border-t border-gray-100 pt-5">
-        <h3 className="text-base font-semibold">Saved Correspondence</h3>
-
-        {entriesError ? (
-          <p className="mt-3 text-sm text-red-700">
-            Could not load correspondence: {entriesError}
-          </p>
-        ) : entries.length === 0 ? (
-          <p className="mt-3 text-sm text-gray-600">
-            No correspondence entries yet.
-          </p>
-        ) : (
-          <ul className="mt-3 divide-y divide-gray-100">
-            {entries.map((entry) => (
-              <li key={entry.id} className="py-3 text-sm">
-                <p className="font-medium">
-                  {entry.direction === "incoming" ? "Incoming" : "Outgoing"}{" "}
-                  · {entry.correspondence_date} · {entry.sender}
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-gray-700">
-                  {entry.summary}
-                </p>
-                {entry.attachment_ref ? (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenAttachment(entry)}
-                    disabled={openingAttachmentId === entry.id}
-                    className="mt-2 text-[#007a72] underline disabled:opacity-60"
-                  >
-                    {openingAttachmentId === entry.id
-                      ? "Opening attachment..."
-                      : entry.attachment_ref.split("/").pop()}
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {attachmentOpenError ? (
-          <p role="alert" className="mt-3 text-sm text-red-700">
-            Could not open attachment: {attachmentOpenError}
-          </p>
-        ) : null}
-      </div>
     </section>
   );
 }

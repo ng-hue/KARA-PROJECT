@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import CorrespondenceForm from "@/components/CorrespondenceForm";
-import { listCorrespondence } from "@/lib/correspondence";
+import { createSignedAttachmentUrl, listCorrespondence } from "@/lib/correspondence";
 import { DIRECTIONS } from "@/lib/correspondenceRules";
 import { formatDate } from "@/lib/format";
 
@@ -28,6 +28,8 @@ function DirectionBadge({ direction }) {
 export default function CorrespondenceSection({ requestId }) {
   const [entries, setEntries] = useState(null);
   const [error, setError] = useState("");
+  const [openingId, setOpeningId] = useState("");
+  const [openError, setOpenError] = useState("");
 
   const loadEntries = useCallback(async () => {
     try {
@@ -42,6 +44,29 @@ export default function CorrespondenceSection({ requestId }) {
   useEffect(() => {
     loadEntries();
   }, [loadEntries]);
+
+  async function openAttachment(entry) {
+    setOpenError("");
+    const newTab = window.open("about:blank", "_blank");
+
+    if (!newTab) {
+      setOpenError("Allow pop-ups to open the attachment.");
+      return;
+    }
+
+    newTab.opener = null;
+    setOpeningId(entry.id);
+
+    try {
+      const signedUrl = await createSignedAttachmentUrl(entry.attachment_ref);
+      newTab.location.replace(signedUrl);
+    } catch (err) {
+      newTab.close();
+      setOpenError(err.message);
+    } finally {
+      setOpeningId("");
+    }
+  }
 
   return (
     <>
@@ -68,10 +93,28 @@ export default function CorrespondenceSection({ requestId }) {
                   <span className="text-gray-600">{entry.sender}</span>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap">{entry.summary}</p>
+                {entry.attachment_ref ? (
+                  <button
+                    type="button"
+                    onClick={() => openAttachment(entry)}
+                    disabled={openingId === entry.id}
+                    className="mt-2 text-[#007a72] underline disabled:opacity-60"
+                  >
+                    {openingId === entry.id
+                      ? "Opening attachment..."
+                      : entry.attachment_ref.split("/").pop()}
+                  </button>
+                ) : null}
               </li>
             ))}
           </ul>
         )}
+
+        {openError ? (
+          <p role="alert" className="mt-3 text-sm text-red-700">
+            Could not open attachment: {openError}
+          </p>
+        ) : null}
       </section>
 
       <div className="mt-6">
