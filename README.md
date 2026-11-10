@@ -15,6 +15,7 @@ A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to lo
 - Save requests to Supabase when the project is configured, or use local browser preview mode when it is not.
 - Track request status transitions using the allowed workflow defined below.
 - Record status history in the `public.status_history` table.
+- Attach PDF, PNG, JPG, or DOCX files to correspondence entries in private Supabase Storage.
 - Filter the request list by status and deadline flag.
 - All sample and seeded data is fictional and for testing only.
 
@@ -38,7 +39,7 @@ Estimated deadlines are labeled as estimated and should not be treated as legal 
 
 ### Current limitations
 
-- Correspondence storage and response intake are not yet complete.
+- Response intake is not yet complete.
 - Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk.
 - All statutory deadline rules should receive sponsor/legal review before being relied upon for real public records requests.
 
@@ -142,6 +143,20 @@ For a fresh *development-only* Supabase project:
 4. Add the `.env.local` values above and restart the development server.
 5. In Supabase Authentication settings, enable email/password sign-in, disable public sign-ups, and have an administrator create one sponsor account plus one account for each team member. Never put credentials in the repository or Jira.
 6. Sign in at `/login`, create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
+
+### Supabase correspondence file storage
+
+The app uses a private Storage bucket named `correspondence-files`. If the team uses a different bucket name, update `ATTACHMENT_BUCKET` in `lib/attachmentRules.js` to match it.
+
+1. In Supabase, open **Storage → Buckets** and create or edit the `correspondence-files` bucket. Keep it **private**.
+2. Set the bucket's maximum file size to **10 MB**.
+3. Set allowed MIME types to:
+   - `application/pdf`
+   - `image/png`
+   - `image/jpeg`
+   - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+4. In the bucket's policies on `storage.objects`, allow `SELECT` and `INSERT` for the `authenticated` role, scoped to `bucket_id = 'correspondence-files'`. Do not add `UPDATE` or `DELETE` policies. Remove any broader policies that allow anonymous access or those operations.
+5. Uploaded files are stored at `{request_id}/{correspondence_id}/{file name}`. The correspondence row stores only this path. Opening an attachment creates a new signed URL that expires after 60 seconds; no public URL is saved.
 
 ### Seed the database
 
