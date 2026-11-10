@@ -24,6 +24,9 @@ import {
 } from "@/lib/requestList";
 import StatusBadge from "@/components/StatusBadge";
 import FlagBadge from "@/components/FlagBadge";
+import { countCorrespondenceByRequest } from "@/lib/correspondence";
+import { correspondenceLabel } from "@/lib/correspondenceRules";
+
 
 const selectClass =
   "mt-1 block rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#009B91] focus:outline-none";
@@ -49,12 +52,19 @@ function RequestsList() {
   const filters = parseFilters(searchParams);
   const [requests, setRequests] = useState(null);
   const [error, setError] = useState("");
+  const [counts, setCounts] = useState({});
 
-  function load() {
-    listRequests()
-      .then(setRequests)
-      .catch((err) => setError(err.message));
-  }
+function load() {
+  Promise.all([
+    listRequests(),
+    countCorrespondenceByRequest().catch(() => null),
+  ])
+    .then(([reqs, c]) => {
+      setCounts(c);
+      setRequests(reqs);
+    })
+    .catch((err) => setError(err.message));
+}
 
   useEffect(load, []);
 
@@ -154,6 +164,10 @@ function RequestsList() {
                     <dt className="text-gray-500">Deadline</dt>
                     <dd><Deadline request={r} /></dd>
                   </div>
+                  <div>
+                    <dt className="text-gray-500">Letters</dt>
+                    <dd>{counts ? correspondenceLabel(counts[r.id]) : <span className="text-gray-500">Not reported</span>}</dd>
+                  </div>
                 </dl>
               </li>
             ))}
@@ -171,6 +185,7 @@ function RequestsList() {
                   <th className="px-4 py-3 font-medium">Deadline</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Flag</th>
+                  <th className="px-4 py-3 font-medium">Letters</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -183,6 +198,7 @@ function RequestsList() {
                     <td className="whitespace-nowrap px-4 py-3"><Deadline request={r} /></td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                     <td className="px-4 py-3"><FlagBadge flag={r.flag} /></td>
+                    <td className="whitespace-nowrap px-4 py-3">{counts ? correspondenceLabel(counts[r.id]) : <span className="text-gray-500">Not reported</span>}</td>
                   </tr>
                 ))}
               </tbody>
