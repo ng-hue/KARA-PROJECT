@@ -1,8 +1,7 @@
-const fs = require("node:fs");
 const path = require("node:path");
 
-// Writes 10 fake requests to lib/sampleData.json for preview mode, and with
-// --supabase also upserts them into the Supabase requests table.
+// Upserts 10 fake requests into the shared Supabase requests table, plus
+// 23 fake correspondence entries (S4 US2, SCRUM-211).
 // Covers the US6 test scenario (SCRUM-163): 3 overdue, 3 due soon, and
 // 3 fulfilled past their deadline, plus 1 draft.
 //
@@ -10,15 +9,43 @@ const path = require("node:path");
 // a demo or the due-soon rows drift into overdue. Set SEED_TODAY=YYYY-MM-DD
 // to seed as of a fixed date.
 //
-// Supabase seeding uses the service role key (risk R2), read from
-// SUPABASE_SERVICE_ROLE_KEY in .env.local. Never prefix it with NEXT_PUBLIC_.
+// Uses the service role key (risk R2), read from SUPABASE_SERVICE_ROLE_KEY in
+// .env.local. Never prefix it with NEXT_PUBLIC_.
 // Seeded rows have fixed ids, so rerunning updates the same 10 rows instead
 // of adding duplicates. Other rows are never touched.
 
-const toSupabase = process.argv.includes("--supabase");
-
 // Fixed ids for the seeded rows: 00000000-0000-4000-8000-000000000001 to ...010.
 const seedId = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+
+// Fixed ids for seeded correspondence (S4 US2, SCRUM-211):
+// request n, entry k -> 00000000-0000-4000-9000-0000000000nk.
+const correspondenceId = (n, k) =>
+  `00000000-0000-4000-9000-${String(n * 10 + k).padStart(12, "0")}`;
+
+const KARA_SENDER = "KARA staff (test account)";
+
+// Seeded entries for each status: at least 2 per request and at least 1 in
+// each direction. dayOffset counts from the date sent and never passes today.
+// Every summary is fictional and names no person, child, family, or case.
+const correspondenceByStatus = {
+  Draft: [
+    { direction: "outgoing", dayOffset: 0, summary: "KARA asked the records office which request format it accepts before filing." },
+    { direction: "incoming", dayOffset: 1, summary: "Records office replied that it accepts requests by email." },
+  ],
+  Sent: [
+    { direction: "outgoing", dayOffset: 0, summary: "KARA sent the original request." },
+    { direction: "incoming", dayOffset: 2, summary: "Agency asked which date range the request should cover." },
+  ],
+  Acknowledged: [
+    { direction: "outgoing", dayOffset: 0, summary: "KARA sent the original request." },
+    { direction: "incoming", dayOffset: 2, summary: "Agency acknowledged the request and said it is being processed." },
+  ],
+  Fulfilled: [
+    { direction: "outgoing", dayOffset: 0, summary: "KARA sent the original request." },
+    { direction: "incoming", dayOffset: 2, summary: "Agency acknowledged the request." },
+    { direction: "incoming", dayOffset: 8, summary: "Agency released the fictional records and closed the request." },
+  ],
+};
 
 const stateNames = {
   AZ: "Arizona",
@@ -62,7 +89,6 @@ async function main() {
       date_sent: dateSent,
       status: s.status,
       deadline: s.status === "Draft" ? null : calculateDeadline(s.state, dateSent),
-      created_at: `${dateSent}T12:00:00Z`,
     };
   });
 
@@ -88,16 +114,38 @@ async function main() {
     );
   }
 
-  const outputPath = path.join(__dirname, "..", "lib", "sampleData.json");
-  fs.writeFileSync(outputPath, `${JSON.stringify(requests, null, 2)}\n`);
-  console.log(
-    `Seeded ${requests.length} fake requests (${stateCount} states, ${statusCount} statuses) as of ${today} into ${path.relative(process.cwd(), outputPath)}.`
+  const correspondence = requests.flatMap((r, index) =>
+    correspondenceByStatus[r.status].map((entry, k) => {
+      const date = addDays(r.date_sent, entry.dayOffset, "calendar");
+      return {
+        id: correspondenceId(index + 1, k + 1),
+        request_id: r.id,
+        direction: entry.direction,
+        correspondence_date: date < today ? date : today,
+        sender: entry.direction === "outgoing" ? KARA_SENDER : `Records Officer, ${r.target_agency}`,
+        summary: `Test fixture: ${entry.summary}`,
+      };
+    })
   );
 
-  if (toSupabase) await seedSupabase(requests);
+  // SCRUM-211: at least 2 entries per request, at least 1 in each direction.
+  requests.forEach((r) => {
+    const entries = correspondence.filter((c) => c.request_id === r.id);
+    const directions = new Set(entries.map((c) => c.direction));
+    if (entries.length < 2 || directions.size < 2) {
+      throw new Error(`${r.id} needs at least 2 correspondence entries in both directions.`);
+    }
+  });
+
+  console.log(
+    `Built ${requests.length} fake requests (${stateCount} states, ${statusCount} statuses) ` +
+      `and ${correspondence.length} correspondence entries as of ${today}.`
+  );
+
+  await seedSupabase(requests, correspondence);
 }
 
-async function seedSupabase(requests) {
+async function seedSupabase(requests, correspondence) {
   try {
     process.loadEnvFile(path.join(__dirname, "..", ".env.local"));
   } catch {} // variables may already be set in the shell
@@ -106,7 +154,7 @@ async function seedSupabase(requests) {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !serviceKey) {
     throw new Error(
-      "Supabase seeding needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
+      "The seed needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local."
     );
   }
 
@@ -115,7 +163,7 @@ async function seedSupabase(requests) {
   const api = restClient(url, serviceKey);
 
   // created_at is left to the database default.
-  const rows = requests.map(({ created_at, ...row }) => row);
+  const rows = requests;
   const upsert = await api("POST", "requests?on_conflict=id", rows, {
     Prefer: "resolution=merge-duplicates,return=minimal",
   });
@@ -129,6 +177,7 @@ async function seedSupabase(requests) {
   console.log(`Upserted ${seeded.data.length} fake requests into Supabase public.requests.`);
 
   await seedStatusHistory(api, rows);
+  await seedCorrespondence(api, correspondence);
 }
 
 // Minimal PostgREST client. Returns { data, error } like supabase-js.
@@ -192,6 +241,27 @@ async function seedStatusHistory(api, rows) {
   console.log(
     `Status history: added ${missing.length}, ${hasHistory.size} seeded requests already had history.`
   );
+}
+
+// Upserts the seeded correspondence entries (S4 US2, SCRUM-211). Fixed ids
+// mean reruns update the same entries. Skipped when the correspondence table
+// does not exist yet (run supabase/correspondence.sql first).
+async function seedCorrespondence(api, entries) {
+  const upsert = await api("POST", "correspondence?on_conflict=id", entries, {
+    Prefer: "resolution=merge-duplicates,return=minimal",
+  });
+  if (upsert.error && MISSING_TABLE_CODES.includes(upsert.error.code)) {
+    console.log("Skipped correspondence: the correspondence table does not exist yet.");
+    return;
+  }
+  if (upsert.error) throw new Error(`Correspondence upsert failed: ${upsert.error.message}`);
+
+  const seeded = await api("GET", `correspondence?select=id&id=in.(${entries.map((c) => c.id).join(",")})`);
+  if (seeded.error) throw new Error(`Correspondence check failed: ${seeded.error.message}`);
+  if (seeded.data.length !== entries.length) {
+    throw new Error(`Expected ${entries.length} seeded correspondence entries, found ${seeded.data.length}.`);
+  }
+  console.log(`Upserted ${seeded.data.length} fake correspondence entries into Supabase public.correspondence.`);
 }
 
 main().catch((err) => {

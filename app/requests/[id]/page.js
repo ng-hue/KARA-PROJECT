@@ -15,6 +15,8 @@ import {
 import { FLAGGABLE_STATUSES, getRequestFlag, localToday } from "@/lib/deadlineFlags";
 import StatusBadge from "@/components/StatusBadge";
 import FlagBadge from "@/components/FlagBadge";
+import StatusHistoryPanel from "@/components/StatusHistoryPanel";
+import CorrespondenceForm from "@/components/CorrespondenceForm";
 
 function Field({ label, children }) {
   return (
@@ -106,9 +108,14 @@ export default function RequestDetailPage() {
 
   return (
     <div>
-      <Link href="/requests" className="text-sm text-[#007a72] underline">
-        Back to all requests
-      </Link>
+      <div className="flex gap-4">
+        <Link href="/requests" className="text-sm text-[#007a72] underline">
+          Back to all requests
+        </Link>
+        <Link href={`/requests/${id}/edit`} className="text-sm text-[#007a72] underline">
+          Edit request
+        </Link>
+      </div>
 
       {error ? (
         <p className="mt-4 rounded-md bg-red-50 p-4 text-red-800">
@@ -143,6 +150,23 @@ export default function RequestDetailPage() {
               <h2 className="text-gray-500">Request Text</h2>
               <p className="mt-1 whitespace-pre-wrap">{request.request_text}</p>
             </div>
+          </div>
+
+          <div className="mt-6">
+            <StatusHistoryPanel
+              requestId={request.id}
+              currentStatus={request.status}
+              onStatusChanged={(newStatus) =>
+                setRequest((current) => ({
+                  ...current,
+                  status: newStatus,
+                }))
+              }
+            />
+          </div>
+
+          <div className="mt-6">
+            <CorrespondenceForm requestId={request.id} />
           </div>
         </>
       )}
