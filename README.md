@@ -15,6 +15,7 @@ A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to lo
 - Save requests to Supabase when the project is configured, or use local browser preview mode when it is not.
 - Track request status transitions using the allowed workflow defined below.
 - Record status history in the `public.status_history` table.
+- Attach PDF, PNG, JPG, or DOCX files to correspondence entries in private Supabase Storage.
 - Filter the request list by status and deadline flag.
 - All sample and seeded data is fictional and for testing only.
 
@@ -38,7 +39,7 @@ Estimated deadlines are labeled as estimated and should not be treated as legal 
 
 ### Current limitations
 
-- Correspondence storage and response intake are not yet complete.
+- Response intake is not yet complete.
 - Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk.
 - All statutory deadline rules should receive sponsor/legal review before being relied upon for real public records requests.
 
@@ -142,6 +143,20 @@ For a fresh *development-only* Supabase project:
 4. Add the `.env.local` values above and restart the development server.
 5. In Supabase Authentication settings, enable email/password sign-in, disable public sign-ups, and have an administrator create one sponsor account plus one account for each team member. Never put credentials in the repository or Jira.
 6. Sign in at `/login`, create a **fictional** request in the web UI, then check **Supabase → Table Editor → `public.requests`** to confirm it was inserted.
+
+### Supabase correspondence file storage
+
+The app uses a private Storage bucket named `correspondence-files`. If the team uses a different bucket name, update `ATTACHMENT_BUCKET` in `lib/attachmentRules.js` to match it.
+
+1. In Supabase, open **Storage → Buckets** and create or edit the `correspondence-files` bucket. Keep it **private**.
+2. Set the bucket's maximum file size to **10 MB**.
+3. Set allowed MIME types to:
+   - `application/pdf`
+   - `image/png`
+   - `image/jpeg`
+   - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+4. In the bucket's policies on `storage.objects`, allow `SELECT` and `INSERT` for the `authenticated` role, scoped to `bucket_id = 'correspondence-files'`. Do not add `UPDATE` or `DELETE` policies. Remove any broader policies that allow anonymous access or those operations.
+5. Uploaded files are stored at `{request_id}/{correspondence_id}/{file name}`. The correspondence row stores only this path. Opening an attachment creates a new signed URL that expires after 60 seconds; no public URL is saved.
 
 ### Seed the database
 
@@ -287,15 +302,15 @@ Current Sprint 3 automated test result:
 
 ## Risk management
 
-| Risk | Likelihood | Impact | Mitigation |
-| --- | --- | --- | --- |
-| Repository transfer breaks the Netlify deploy | Medium | High | Repository transfer has been deferred by the sponsor until the end of the semester to reduce deployment risk. Confirm the live site is stable before transferring and relink Netlify after the transfer. |
-| Row level security blocks the app itself | High | Medium | Write the RLS policies first, test with the anon key and an authenticated session before merging. Keep the seed script on the service role key. |
-| Team locked out of its own deployed app | Low | High | Sponsor account plus five team accounts created in US2. Supabase dashboard password reset is the fallback. Credentials never go in the repository. |
-| Backfilling status history on seeded rows is skipped | Medium | Low | US5 includes the backfill as a task. US7 checklist verifies every seeded request shows at least one history row. |
-| Another exam week cuts coding time | Medium | Medium | Each teammate names exam dates at the planning meeting. Reilly moves owners' tasks earlier or later in the sprint around them. Scope is not extended for lost days; stories are dropped to the product backlog instead. |
-| Roles and permissions get pulled in with auth | Medium | Medium | Roles are out of scope. Every signed-in user has the same permissions this sprint. Anyone who starts a roles table stops and moves it to the product backlog. |
-| Status rules are implemented in two places and drift | Medium | Medium | Transition rules and overdue rules each live in one shared helper (US5, US6) used by both the list and the detail page. |
+| # | Risk | Likelihood / Impact | Watch owner | Warning sign | Planned response |
+| --- | --- | --- | --- | --- | --- |
+| R1 | Storage location (Supabase Storage or Google Drive links) is not decided at planning | High / High | Nathan (US1, SCRUM-197) | No sponsor answer at the 10/28/2026 meeting | Start US2 and US4 first, which do not depend on it. Hold US1 and US3 until the sponsor answers. |
+| R2 | Storage policies leave files readable without signing in | Medium / High | Nathan (US1, SCRUM-197) | The anonymous read test returns any file bytes | Do not merge US3 until every US1 test passes. |
+| R3 | Real agency correspondence or identifying details enter the tool | Low / High | Daniel (US2, SCRUM-198) | Any non-fake file, or a summary naming a person | Delete it the same day and tell the sponsor within 1 business day. |
+| R4 | US2 slips and blocks US3, US4, and US5 | Medium / Medium | Daniel (US2, SCRUM-198) | The correspondence table not merged by the sprint midpoint | Reilly reorders dependent tasks. Scope is not extended; stories drop to the product backlog instead. |
+| R5 | Failed saves leave orphaned files in storage | Medium / Low | Tommy (US3, SCRUM-199) | Bucket object count exceeds entries with attachments | Cleanup on failed save is a US3 task, checked by the failed save test. |
+| R6 | Field names drift from the Master Fields List | Medium / Medium | Daniel (US2, SCRUM-198) | Migration merged before the field check is recorded | The field check is the first US2 task. |
+| R7 | Message types or user roles get pulled into Sprint 4 | Medium / Medium | Reilly | Anyone starts a message type pick list or a roles table | Both are out of scope until the sponsor decides. Stop and move the work to the product backlog. |
 
 ## Team
 
