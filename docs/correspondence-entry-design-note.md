@@ -48,30 +48,30 @@ Check the field names above against the Master Fields List so they line up with 
 
 ## Master Fields List Check (SCRUM-208)
 
-**Status:** Pending. The team does not have the Master Fields List yet. Requested from the sponsor; date requested: [date].
+**Status:** Complete, 11/11/2026. Checked against the KARA x SoS Master Fields List v9.8 (live Google Sheet, last edited 11/03/2026), Module Field Schema Registry and Pick List Reference tabs.
+
+**Result:** None of these fields are in the Master Fields List. The list has no entry for this tool at all: no module, no correspondence fields, and no pick lists. Nothing needs to be renamed. Instead, the fields need to be registered in the Master Fields List by Jarred VanHorn, who owns it.
 
 Sprint 4 adds one field the note above does not list: `created_by`, the signed-in user who saved the entry, to match `status_history.changed_by` (SCRUM-209).
 
-When the list arrives, fill in the last three columns for every row. Leave a cell as "Pending" until it is checked; do not guess a name.
-
 | Field (this note) | Type | Master Fields List name | Matches? | Rename or notes |
 |---|---|---|---|---|
-| id | uuid | Pending | Pending | |
-| request_id | uuid | Pending | Pending | |
-| direction | text (outgoing, incoming) | Pending | Pending | Also check the two allowed values. |
-| correspondence_date | date | Pending | Pending | |
-| sender | text | Pending | Pending | |
-| summary | text | Pending | Pending | Proposed 600 character cap awaits sponsor sign-off. |
-| attachment_ref | text | Pending | Pending | |
-| created_by | uuid | Pending | Pending | Added in Sprint 4. |
-| created_at | timestamptz | Pending | Pending | |
+| id | uuid | Not in list | No, not registered | No rename. Register. |
+| request_id | uuid | Not in list | No, not registered | No rename. Register. |
+| direction | text (outgoing, incoming) | Not in list | No, not registered | No rename. Register the field and both values (Outgoing, Incoming). |
+| correspondence_date | date | Not in list | No, not registered | No rename. Register. |
+| sender | text | Not in list | No, not registered | No rename. Register. |
+| summary | text | Not in list | No, not registered | No rename. Register. Proposed 600 character cap still awaits sponsor sign-off. |
+| attachment_ref | text | Not in list | No, not registered | No rename. Register. |
+| created_by | uuid | Not in list | No, not registered | No rename. Register. |
+| created_at | timestamptz | Not in list | No, not registered | No rename. Register. |
 
-**How to complete the check**
+**Fields the Master Fields List requires that this note does not have:** None. The list has no correspondence entry to compare against.
 
-1. For each field, find the matching entry in the Master Fields List and record its exact name.
-2. Mark Matches? as Yes, or No with the Master Fields List name to use instead.
-3. Record any field the Master Fields List requires for correspondence that this note does not have. Do not add it to the table without sponsor approval.
-4. If any name changes, update the Fields table above, `supabase/correspondence.sql`, the entry form, and the seed script in the same pull request.
-5. Change Status to Complete with the date and the version or date of the Master Fields List used.
+**Related findings for the sponsor**
 
-**Until the list arrives:** the table, form, and seed are built with the names in this note (risk R6, SCRUM-203). Renaming a column before real data exists is a small change, so the build is not blocked. Record that the check was still pending in the pull request that adds the table.
+1. Message type (open question 1): the Master Fields List already has contact type pick lists on other databases (Email, Phone, LinkedIn, In-Person Meeting, Video Call, Text Message, Event, Other). None of them includes Letter. If a message type is added, the sponsor decides whether to reuse one of those lists with Letter added, or approve a new list.
+2. Request Status: the EIM Field Inventory & Data Tracking workbook tracks the same public records requests with a different status list (Draft, Ready to Submit, Submitted, Fulfilled, Partially Fulfilled, Denied, Withdrawn). This tool uses Draft, Sent, Acknowledged, Fulfilled, Denied, Appealed. The sponsor decides whether the two should match before either is registered.
+3. Registration needs a module ID and a field ID prefix for this tool. Both are Jarred VanHorn's decision.
+
+**Next step:** send the Fields table above to the sponsor and Jarred VanHorn for registration. Keep the current names until registration is confirmed.
