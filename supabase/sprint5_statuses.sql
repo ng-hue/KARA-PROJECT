@@ -4,7 +4,7 @@
 --
 -- IMPORTANT:
 -- The new CHECK constraints are added NOT VALID first.
--- This lets the existing Sprint 4 seeded rows remain temporarily
+-- This lets older seeded rows remain temporarily
 -- until scripts/seed.cjs replaces their old status values.
 
 begin;
@@ -77,7 +77,7 @@ alter table public.status_history
   )
   not valid;
 
--- Remove the Sprint 3/4 RPC signature.
+-- Remove older RPC signatures.
 drop function if exists
   public.change_request_status(uuid, text, text);
 
@@ -147,7 +147,17 @@ begin
       and p_new_status in (
         'Provided',
         'Refused',
-        'No response by deadline',
+        'Withdrawn'
+      )
+    )
+    or
+    (
+      v_old_status = 'No response by deadline'
+      and p_new_status in (
+        'Acknowledged',
+        'Provided',
+        'Partial',
+        'Refused',
         'Withdrawn'
       )
     )

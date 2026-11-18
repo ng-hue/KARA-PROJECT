@@ -151,8 +151,7 @@ after insert on public.requests
 for each row
 execute function public.create_initial_status_history();
 
--- Remove the old three-argument version so PostgREST does not
--- see two overloaded change_request_status functions.
+-- Remove older versions so PostgREST sees only one function signature.
 drop function if exists
   public.change_request_status(uuid, text, text);
 
@@ -224,7 +223,17 @@ begin
       and p_new_status in (
         'Provided',
         'Refused',
-        'No response by deadline',
+        'Withdrawn'
+      )
+    )
+    or
+    (
+      v_old_status = 'No response by deadline'
+      and p_new_status in (
+        'Acknowledged',
+        'Provided',
+        'Partial',
+        'Refused',
         'Withdrawn'
       )
     )
