@@ -1,5 +1,5 @@
--- Sprint 3 - US5: Request status history
--- Owner: Tommy Nguyen
+-- Request status history
+-- Sprint 5 status set and transition rules
 
 create table if not exists public.status_history (
   id uuid primary key default gen_random_uuid(),
@@ -12,24 +12,28 @@ create table if not exists public.status_history (
     check (
       from_status is null or
       from_status in (
-        'Draft',
+        'Drafted',
         'Sent',
         'Acknowledged',
-        'Fulfilled',
-        'Denied',
-        'Appealed'
+        'Provided',
+        'Partial',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
       )
     ),
 
   to_status text not null
     check (
       to_status in (
-        'Draft',
+        'Drafted',
         'Sent',
         'Acknowledged',
-        'Fulfilled',
-        'Denied',
-        'Appealed'
+        'Provided',
+        'Partial',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
       )
     ),
 
@@ -46,10 +50,8 @@ create index if not exists status_history_request_id_idx
 create index if not exists status_history_changed_at_idx
   on public.status_history(changed_at desc);
 
--- Enable row level security.
 alter table public.status_history enable row level security;
 
--- Match the authenticated-only access model from US2.
 do $$
 declare
   policy_name text;
@@ -57,7 +59,8 @@ begin
   for policy_name in
     select policyname
     from pg_policies
-    where schemaname = 'public' and tablename = 'status_history'
+    where schemaname = 'public'
+      and tablename = 'status_history'
   loop
     execute format(
       'drop policy %I on public.status_history',
@@ -68,7 +71,10 @@ end
 $$;
 
 revoke all on public.status_history from anon;
-grant select, insert on public.status_history to authenticated;
+
+grant select, insert
+  on public.status_history
+  to authenticated;
 
 create policy "Authenticated users can read status history"
   on public.status_history
@@ -82,9 +88,9 @@ create policy "Authenticated users can create status history"
   to authenticated
   with check (changed_by = auth.uid());
 
--- Normalize older rows that were created without a status.
+-- Normalize rows that were created without a status.
 update public.requests
-set status = 'Draft'
+set status = 'Drafted'
 where status is null;
 
 -- Backfill one creation-history row for every existing request
@@ -128,7 +134,7 @@ begin
   values (
     new.id,
     null,
-    coalesce(new.status, 'Draft'),
+    coalesce(new.status, 'Drafted'),
     auth.uid(),
     'Request created'
   );
@@ -145,21 +151,31 @@ after insert on public.requests
 for each row
 execute function public.create_initial_status_history();
 
+-- Remove the old three-argument version so PostgREST does not
+-- see two overloaded change_request_status functions.
+drop function if exists
+  public.change_request_status(uuid, text, text);
+
+drop function if exists
+  public.change_request_status(uuid, text, text, date);
+
 -- Change a request's status and record the change atomically.
-create or replace function public.change_request_status(
+create function public.change_request_status(
   p_request_id uuid,
   p_new_status text,
-  p_note text default null
+  p_note text default null,
+  p_sent_date date default null
 )
 returns public.status_history
 language plpgsql
 security invoker
+set search_path = public
 as $$
 declare
   v_old_status text;
   v_history public.status_history;
 begin
-  -- Lock the request while the status change is being processed.
+  -- Lock the request while the status change is processed.
   select status
   into v_old_status
   from public.requests
@@ -170,24 +186,72 @@ begin
     raise exception 'Request not found';
   end if;
 
-  -- Enforce Sprint 3 status transition rules.
+  -- Enforce Sprint 5 transition rules.
   if not (
-    (v_old_status = 'Draft' and p_new_status = 'Sent')
+    (
+      v_old_status = 'Drafted'
+      and p_new_status in (
+        'Sent',
+        'Withdrawn'
+      )
+    )
     or
-    (v_old_status = 'Sent' and p_new_status in ('Acknowledged', 'Fulfilled', 'Denied'))
+    (
+      v_old_status = 'Sent'
+      and p_new_status in (
+        'Acknowledged',
+        'Provided',
+        'Partial',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
+      )
+    )
     or
-    (v_old_status = 'Acknowledged' and p_new_status in ('Fulfilled', 'Denied'))
+    (
+      v_old_status = 'Acknowledged'
+      and p_new_status in (
+        'Provided',
+        'Partial',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
+      )
+    )
     or
-    (v_old_status = 'Denied' and p_new_status = 'Appealed')
+    (
+      v_old_status = 'Partial'
+      and p_new_status in (
+        'Provided',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
+      )
+    )
   ) then
-    raise exception 'Invalid status transition from % to %',
+    raise exception
+      'Invalid status transition from % to %',
       v_old_status,
       p_new_status;
   end if;
 
-  -- Update the request's current status.
+  -- A request cannot become Sent without its actual sent date.
+  if p_new_status = 'Sent'
+     and p_sent_date is null then
+    raise exception
+      'A sent date is required when changing a request to Sent';
+  end if;
+
+  -- Update the current status. When moving to Sent,
+  -- save the supplied sent date at the same time.
   update public.requests
-  set status = p_new_status
+  set
+    status = p_new_status,
+    date_sent = case
+      when p_new_status = 'Sent'
+        then p_sent_date
+      else date_sent
+    end
   where id = p_request_id;
 
   -- Record the status change.
@@ -212,8 +276,20 @@ begin
 end;
 $$;
 
-revoke execute on function public.change_request_status(uuid, text, text)
+revoke execute
+  on function public.change_request_status(
+    uuid,
+    text,
+    text,
+    date
+  )
   from public, anon;
 
-grant execute on function public.change_request_status(uuid, text, text)
+grant execute
+  on function public.change_request_status(
+    uuid,
+    text,
+    text,
+    date
+  )
   to authenticated;

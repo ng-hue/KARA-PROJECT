@@ -30,7 +30,9 @@ function Field({ label, children }) {
 // Deadline and flag come from the same shared helpers as the list page
 // (SCRUM-183, risk R7), so the two pages always agree.
 function deadlineFor(request) {
-  return request.status === "Draft" ? null : getDeadlineInfo(request.state, request.date_sent);
+  return request.status === "Drafted"
+  ? null
+  : getDeadlineInfo(request.state, request.date_sent);
 }
 
 function DeadlineValue({ request, info }) {
