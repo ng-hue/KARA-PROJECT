@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { listRequests, resetPreviewData } from "@/lib/requests";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { formatDate } from "@/lib/format";
-import { STATUSES } from "@/lib/constants";
+import { STATES, STATUSES } from "@/lib/constants";
 import {
   DEADLINE_FOOTNOTE,
   NOT_SUPPORTED_LABEL,
@@ -17,6 +17,7 @@ import {
 import { FLAGGABLE_STATUSES, localToday } from "@/lib/deadlineFlags";
 import {
   FLAG_FILTERS,
+  WAITING_FILTER,
   applyFilters,
   filtersToQuery,
   parseFilters,
@@ -77,6 +78,158 @@ function Letters({ counts, id }) {
   return correspondenceLabel(counts[id]);
 }
 
+function stateLabel(code) {
+  return STATES.find((s) => s.code === code)?.name || "";
+}
+
+// Matches a full name or two-letter code exactly, any case.
+function findState(text) {
+  const t = text.trim().toLowerCase();
+  return STATES.find((s) => s.name.toLowerCase() === t || s.code.toLowerCase() === t);
+}
+
+// States whose name contains the text or whose code starts with it, in the
+// alphabetical order of STATES. Empty text lists every state.
+function matchingStates(text) {
+  const t = text.trim().toLowerCase();
+  if (!t) return STATES;
+  return STATES.filter(
+    (s) => s.name.toLowerCase().includes(t) || s.code.toLowerCase().startsWith(t)
+  );
+}
+
+// Type-to-search state filter. Focusing the box opens a scrollable list of
+// every state; typing narrows it. The request list filters on an exact
+// name or code match and shows every state otherwise.
+function StateSearch({ value, onSelect }) {
+  const [text, setText] = useState(stateLabel(value));
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const typing = useRef(false);
+  const listRef = useRef(null);
+
+  // Keep the box in step when the filter changes elsewhere (Clear filters,
+  // back button), but not when the change came from typing here.
+  useEffect(() => {
+    if (typing.current) {
+      typing.current = false;
+      return;
+    }
+    setText(stateLabel(value));
+  }, [value]);
+
+  const suggestions = matchingStates(text);
+
+  // Keep the highlighted state visible while arrowing through the list.
+  useEffect(() => {
+    listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  function apply(code) {
+    if (code !== value) {
+      typing.current = true;
+      onSelect(code);
+    }
+  }
+
+  function handleChange(event) {
+    const typed = event.target.value;
+    setText(typed);
+    setOpen(true);
+    setActive(0);
+    apply(findState(typed)?.code || "");
+  }
+
+  function choose(state) {
+    setText(state.name);
+    setOpen(false);
+    apply(state.code);
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (!open) setOpen(true);
+      else setActive((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (event.key === "Enter" && open && suggestions[active]) {
+      event.preventDefault();
+      choose(suggestions[active]);
+    } else if (event.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  const noMatch = text.trim() && suggestions.length === 0;
+  const showList = open && suggestions.length > 0;
+
+  return (
+    <div className="text-sm font-medium text-gray-700">
+      <label htmlFor="state-search">State</label>
+      <div className="relative mt-1">
+        <input
+          id="state-search"
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={showList}
+          aria-controls="state-suggestions"
+          aria-activedescendant={showList ? `state-option-${suggestions[active]?.code}` : undefined}
+          aria-invalid={noMatch ? true : undefined}
+          aria-describedby={noMatch ? "state-search-error" : undefined}
+          value={text}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            setOpen(true);
+            setActive(0);
+          }}
+          onBlur={() => setOpen(false)}
+          placeholder="All states"
+          autoComplete="off"
+          className="block w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal focus:border-accent focus:outline-none"
+        />
+        {showList ? (
+          <ul
+            ref={listRef}
+            id="state-suggestions"
+            role="listbox"
+            className="absolute z-10 mt-1 max-h-44 w-48 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 font-normal shadow-lg"
+          >
+            {suggestions.map((s, i) => (
+              <li
+                key={s.code}
+                id={`state-option-${s.code}`}
+                role="option"
+                aria-selected={i === active}
+                // mousedown, not click, so the input does not blur first.
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  choose(s);
+                }}
+                onMouseEnter={() => setActive(i)}
+                className={`flex cursor-pointer justify-between px-3 py-1.5 ${
+                  i === active ? "bg-gray-100" : ""
+                }`}
+              >
+                <span>{s.name}</span>
+                <span className="text-gray-400">{s.code}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+      {noMatch ? (
+        <p id="state-search-error" className="mt-1 text-xs font-normal text-red-700">
+          No state matches &ldquo;{text.trim()}&rdquo;.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 // Summary tile. With href it works as a one-click filter.
 function Stat({ label, value, tone = "", href, selected }) {
   const body = (
@@ -132,11 +285,11 @@ function load() {
   const today = localToday();
   const all = requests ? sortForList(withDeadlines(requests, today)) : null;
   const rows = all ? applyFilters(all, filters) : null;
-  const filtered = Boolean(filters.status || filters.flag);
+  const filtered = Boolean(filters.status || filters.flag || filters.state);
 
   const overdue = all ? all.filter((r) => r.flag?.key === "overdue").length : 0;
-  const dueSoon = all ? all.filter((r) => r.flag?.key === "due_soon").length : 0;
   const waiting = all ? all.filter((r) => FLAGGABLE_STATUSES.includes(r.status)).length : 0;
+  const dueSoon = all ? all.filter((r) => r.flag?.key === "due_soon").length : 0;
 
   return (
     <div>
@@ -173,7 +326,12 @@ function load() {
             href={`/requests${filtersToQuery({ ...filters, flag: "due_soon" })}`}
             selected={filters.flag === "due_soon"}
           />
-          <Stat label="Waiting on agency" value={waiting} />
+          <Stat
+            label="Waiting on agency"
+            value={waiting}
+            href={`/requests${filtersToQuery({ ...filters, status: WAITING_FILTER })}`}
+            selected={filters.status === WAITING_FILTER}
+          />
           <Stat
             label="All requests"
             value={all.length}
@@ -183,16 +341,23 @@ function load() {
         </div>
       ) : null}
 
-      <div className="mb-4 mt-6 flex flex-wrap items-end gap-4">
+      <div className="mb-4 mt-6 flex flex-wrap items-start gap-4">
         <label className="text-sm font-medium text-gray-700">
           Status
           <select name="status" value={filters.status} onChange={setFilter} className={selectClass}>
             <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            <option value={WAITING_FILTER}>Waiting on agency (Sent or Acknowledged)</option>
+            <optgroup label="Status">
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </optgroup>
           </select>
         </label>
+        <StateSearch
+          value={filters.state}
+          onSelect={(code) => setFilter({ target: { name: "state", value: code } })}
+        />
         <label className="text-sm font-medium text-gray-700">
           Flag
           <select name="flag" value={filters.flag} onChange={setFilter} className={selectClass}>
@@ -203,7 +368,7 @@ function load() {
           </select>
         </label>
         {filtered ? (
-          <Link href="/requests" scroll={false} className="pb-2 text-sm text-link underline">
+          <Link href="/requests" scroll={false} className="mt-8 text-sm text-link underline">
             Clear filters
           </Link>
         ) : null}
