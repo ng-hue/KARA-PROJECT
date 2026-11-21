@@ -9,8 +9,8 @@ import { formatDate } from "@/lib/format";
 import { STATUSES } from "@/lib/constants";
 import {
   DEADLINE_FOOTNOTE,
-  ESTIMATE_NOTE,
   NOT_SUPPORTED_LABEL,
+  NO_STATUTORY_DEADLINE_LABEL,
   deadlineLabel,
 } from "@/lib/deadlines";
 import { localToday } from "@/lib/deadlineFlags";
@@ -37,10 +37,10 @@ function Deadline({ request }) {
   const info = request.deadlineInfo;
   if (!info) return <span className="text-gray-500">Not sent</span>;
   if (info.kind === "unsupported") return <span className="text-gray-500">{NOT_SUPPORTED_LABEL}</span>;
+  if (info.kind === "none") return <span className="text-gray-500">{NO_STATUTORY_DEADLINE_LABEL}</span>;
   if (!info.date) return <span className="text-gray-500">Not reported</span>;
   return (
     <span title={deadlineLabel(request.state)}>
-      {info.kind === "estimated" ? "Est. " : ""}
       {formatDate(info.date)}*
     </span>
   );
@@ -206,7 +206,6 @@ function load() {
           </div>
 
           <p className="mt-4 text-xs text-gray-600">{DEADLINE_FOOTNOTE}</p>
-          <p className="mt-1 text-xs text-gray-600">{ESTIMATE_NOTE}</p>
         </>
       )}
     </div>

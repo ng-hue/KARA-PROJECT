@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { STATES, STATUSES } from "@/lib/constants";
 import { validateRequest } from "@/lib/requests";
-import { calculateDeadline } from "@/lib/deadlines";
+import { calculateDeadline, deadlineLabel } from "@/lib/deadlines";
 import { formatDate } from "@/lib/format";
 
 const inputClass =
@@ -112,7 +112,11 @@ export default function RequestForm({
         <div>
           <p className="block text-sm font-medium">Response Deadline</p>
           <p className="mt-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-base text-gray-700">
-            {deadline ? formatDate(deadline) : "Pending research"}
+            {deadline
+              ? formatDate(deadline)
+              : values.state
+                ? deadlineLabel(values.state)
+                : "Choose a state"}
           </p>
           <p className="mt-1 text-sm text-gray-500">
             Calculated from the state and date sent. It cannot be edited directly.
