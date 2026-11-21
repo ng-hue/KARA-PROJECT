@@ -30,7 +30,7 @@ export default function EditRequestPage() {
     return (
       <div className="max-w-xl">
         <p className="rounded-md bg-red-50 p-3 text-sm text-red-800">{loadError}</p>
-        <Link href="/requests" className="mt-4 inline-block text-sm text-[#007a72] underline">
+        <Link href="/requests" className="mt-4 inline-block text-sm text-link underline">
           Back to all requests
         </Link>
       </div>
@@ -43,7 +43,7 @@ export default function EditRequestPage() {
 
   return (
     <div className="max-w-xl">
-      <Link href={`/requests/${id}`} className="text-sm text-[#007a72] underline">
+      <Link href={`/requests/${id}`} className="text-sm text-link underline">
         Back to request
       </Link>
       <h1 className="mt-2 mb-6 text-2xl font-semibold">Edit Request</h1>

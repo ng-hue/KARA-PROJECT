@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getRequest } from "@/lib/requests";
 import { formatDate } from "@/lib/format";
+import { STATES } from "@/lib/constants";
 import {
   DEADLINE_FOOTNOTE,
   NOT_SUPPORTED_LABEL,
@@ -21,11 +22,15 @@ import CorrespondenceSection from "@/components/CorrespondenceSection";
 
 function Field({ label, children }) {
   return (
-    <div>
+    <div className="flex justify-between gap-4 py-2 first:pt-0 last:pb-0">
       <dt className="text-gray-500">{label}</dt>
-      <dd className="mt-1">{children}</dd>
+      <dd className="text-right">{children}</dd>
     </div>
   );
+}
+
+function stateName(code) {
+  return STATES.find((s) => s.code === code)?.name || code;
 }
 
 // Deadline and flag come from the same shared helpers as the list page
@@ -55,14 +60,20 @@ function deadlineLine(days) {
   return `${late} ${late === 1 ? "day" : "days"} overdue`;
 }
 
+// Card tone follows the flag: red when overdue, amber when due soon.
+const SUMMARY_TONE = {
+  overdue: "border-red-200 bg-red-50",
+  due_soon: "border-amber-200 bg-amber-50",
+};
+
 function DeadlineSummary({ request }) {
   const info = deadlineFor(request);
 
   if (!info?.date) {
     return (
-      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 text-sm">
-        <h2 className="text-gray-500">Deadline Summary</h2>
-        <p className="mt-1 text-gray-500"><DeadlineValue request={request} info={info} /></p>
+      <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
+        <h2 className="text-gray-500">Deadline</h2>
+        <p className="mt-1 text-base font-medium"><DeadlineValue request={request} info={info} /></p>
       </div>
     );
   }
@@ -75,25 +86,27 @@ function DeadlineSummary({ request }) {
     dateSent: request.date_sent,
     today,
   });
-  // Fulfilled, Denied and Appealed requests are closed, so no countdown.
+  // Only Sent and Acknowledged requests are still waiting on the agency,
+  // so closed requests get no countdown.
   const open = FLAGGABLE_STATUSES.includes(request.status);
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 text-sm">
+    <div className={`rounded-lg border p-5 text-sm ${SUMMARY_TONE[flag?.key] || "border-gray-200 bg-white"}`}>
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-gray-500">Deadline Summary</h2>
+        <h2 className="text-gray-600">Deadline</h2>
         <FlagBadge flag={flag} />
       </div>
       {open ? (
-        <p className={`mt-1 text-lg font-semibold ${flag?.key === "overdue" ? "text-red-700" : ""}`}>
+        <p className={`mt-1 text-2xl font-semibold ${flag?.key === "overdue" ? "text-red-700" : ""}`}>
           {deadlineLine(days)}
         </p>
       ) : null}
-      <dl className="mt-4 grid grid-cols-2 gap-4">
+      <dl className="mt-3 divide-y divide-black/5">
         <Field label="Deadline"><DeadlineValue request={request} info={info} /></Field>
         {open ? <Field label="Days Remaining">{days}</Field> : null}
+        <Field label="Rule">{deadlineLabel(request.state)}</Field>
       </dl>
-      <p className="mt-4 text-xs text-gray-600">{DEADLINE_FOOTNOTE}</p>
+      <p className="mt-3 text-xs text-gray-600">{DEADLINE_FOOTNOTE}</p>
     </div>
   );
 }
@@ -111,14 +124,9 @@ export default function RequestDetailPage() {
 
   return (
     <div>
-      <div className="flex gap-4">
-        <Link href="/requests" className="text-sm text-[#007a72] underline">
-          Back to all requests
-        </Link>
-        <Link href={`/requests/${id}/edit`} className="text-sm text-[#007a72] underline">
-          Edit request
-        </Link>
-      </div>
+      <Link href="/requests" className="text-sm text-link hover:underline">
+        &larr; All requests
+      </Link>
 
       {error ? (
         <p className="mt-4 rounded-md bg-red-50 p-4 text-red-800">
@@ -128,48 +136,64 @@ export default function RequestDetailPage() {
         <p className="mt-4 text-gray-600">Loading request...</p>
       ) : (
         <>
-          <div className="mb-6 mt-4 flex flex-wrap items-start justify-between gap-4">
-            <h1 className="text-2xl font-semibold">{request.title}</h1>
-            <StatusBadge status={request.status} />
-          </div>
-
-          <DeadlineSummary request={request} />
-
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-              <Field label="State">{request.state}</Field>
-              <Field label="Target Agency">{request.target_agency}</Field>
-              <Field label="Date Sent">{formatDate(request.date_sent)}</Field>
-              <Field label="Deadline">
-                <DeadlineValue request={request} info={deadlineFor(request)} />
-              </Field>
-              <Field label="Created">{formatDate(request.created_at)}</Field>
-              <Field label="Request ID">
-                <span className="break-all font-mono text-xs">{request.id}</span>
-              </Field>
-            </dl>
-
-            <div className="mt-6 border-t border-gray-100 pt-4 text-sm">
-              <h2 className="text-gray-500">Request Text</h2>
-              <p className="mt-1 whitespace-pre-wrap">{request.request_text}</p>
+          <div className="mb-6 mt-3 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">{request.title}</h1>
+              <p className="mt-1 text-sm text-gray-600">
+                {request.target_agency}, {stateName(request.state)}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <StatusBadge status={request.status} />
+              <Link
+                href={`/requests/${id}/edit`}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+              >
+                Edit request
+              </Link>
             </div>
           </div>
 
-          <div className="mt-6">
-            <StatusHistoryPanel
-              requestId={request.id}
-              currentStatus={request.status}
-              onStatusChanged={(newStatus) =>
-                setRequest((current) => ({
-                  ...current,
-                  status: newStatus,
-                }))
-              }
-            />
-          </div>
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+            {/* Side column comes first on small screens so the deadline is on top. */}
+            <aside className="space-y-6 lg:order-2">
+              <DeadlineSummary request={request} />
 
-          <div className="mt-6">
-            <CorrespondenceSection requestId={request.id} />
+              <StatusHistoryPanel
+                requestId={request.id}
+                currentStatus={request.status}
+                onStatusChanged={(newStatus) =>
+                  setRequest((current) => ({
+                    ...current,
+                    status: newStatus,
+                  }))
+                }
+              />
+
+              <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm">
+                <h2 className="mb-3 font-semibold">Details</h2>
+                <dl className="divide-y divide-gray-100">
+                  <Field label="State">{stateName(request.state)}</Field>
+                  <Field label="Target Agency">{request.target_agency}</Field>
+                  <Field label="Date Sent">
+                    {request.date_sent ? formatDate(request.date_sent) : <span className="text-gray-500">Not sent</span>}
+                  </Field>
+                  <Field label="Created">{formatDate(request.created_at)}</Field>
+                </dl>
+                <p className="mt-4 break-all font-mono text-xs text-gray-400">
+                  ID {request.id}
+                </p>
+              </div>
+            </aside>
+
+            <div className="space-y-6 lg:order-1">
+              <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm">
+                <h2 className="font-semibold">Request Text</h2>
+                <p className="mt-2 whitespace-pre-wrap">{request.request_text}</p>
+              </div>
+
+              <CorrespondenceSection requestId={request.id} />
+            </div>
           </div>
         </>
       )}

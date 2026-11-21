@@ -7,7 +7,7 @@ import { calculateDeadline, deadlineLabel } from "@/lib/deadlines";
 import { formatDate } from "@/lib/format";
 
 const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:border-[#009B91] focus:outline-none";
+  "mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:border-accent focus:outline-none";
 
 function Field({ label, name, error, required, children }) {
   return (
@@ -133,7 +133,7 @@ export default function RequestForm({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full rounded-md bg-[#012929] px-4 py-2.5 font-medium text-white hover:bg-[#023d3d] disabled:opacity-60 sm:w-auto"
+        className="w-full rounded-md bg-brand px-4 py-2.5 font-medium text-white hover:bg-brand-hover disabled:opacity-60 sm:w-auto"
       >
         {saving ? "Saving..." : submitLabel}
       </button>

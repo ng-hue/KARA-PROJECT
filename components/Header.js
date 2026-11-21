@@ -30,8 +30,8 @@ export default function Header() {
   }
 
   return (
-    <header className="bg-[#012929] text-white">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+    <header className="bg-brand text-white">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
         <Link href="/requests" className="text-lg font-semibold">
           KARA Public Records Tracker
         </Link>
@@ -42,7 +42,7 @@ export default function Header() {
             </Link>
             <Link
               href="/requests/new"
-              className="rounded bg-[#009B91] px-3 py-2 font-medium hover:bg-[#00877e]"
+              className="rounded bg-accent px-3 py-2 font-medium hover:bg-accent-hover"
             >
               New Request
             </Link>
@@ -59,7 +59,7 @@ export default function Header() {
           </nav>
         )}
       </div>
-      {error ? <p role="alert" className="mx-auto max-w-5xl px-4 pb-3 text-sm text-red-200">{error}</p> : null}
+      {error ? <p role="alert" className="mx-auto max-w-6xl px-4 pb-3 text-sm text-red-200">{error}</p> : null}
     </header>
   );
 }
