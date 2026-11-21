@@ -21,21 +21,20 @@ A web application for [KARA (Kids At Risk Action)](https://karagroup.org/) to lo
 
 ### Deadline behavior
 
-The application currently supports these deadline rules:
+The application currently supports these deadline rules. Alaska, Florida, and Hawaii were added in Sprint 5 exactly as the sponsor supplied them; the team does not research state law.
 
+- Alaska (AK): 10 business days
 - California (CA): 10 calendar days
+- Hawaii (HI): 10 business days
 - Maine (ME): 5 business days
 - Texas (TX): 10 business days
-- Arizona (AZ): estimated deadline based on supported fixed-deadline states
-- Minnesota (MN): estimated deadline based on supported fixed-deadline states
+- Arizona (AZ), Florida (FL), Minnesota (MN): no statutory deadline. The app shows "No statutory deadline" and stores no date.
 
 Requests with a deadline before today are marked **Overdue** when their status is `Sent` or `Acknowledged`.
 
 Requests with a deadline within the next 7 days are marked **Due Soon** when their status is `Sent` or `Acknowledged`.
 
-Requests with status `Draft`, `Fulfilled`, `Denied`, or `Appealed` are not flagged as overdue or due soon.
-
-Estimated deadlines are labeled as estimated and should not be treated as legal advice.
+Requests in any other status, and requests in a state with no statutory deadline, are never flagged.
 
 ### Current limitations
 
