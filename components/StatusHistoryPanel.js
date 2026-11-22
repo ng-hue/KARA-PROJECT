@@ -12,6 +12,7 @@ export default function StatusHistoryPanel({
   requestId,
   currentStatus,
   onStatusChanged,
+  checkStatusChange,
 }) {
   const [history, setHistory] = useState([]);
   const [nextStatus, setNextStatus] = useState("");
@@ -51,6 +52,12 @@ export default function StatusHistoryPanel({
     event.preventDefault();
 
     if (!nextStatus) return;
+
+    const problem = checkStatusChange ? checkStatusChange(nextStatus) : "";
+    if (problem) {
+      setError(problem);
+      return;
+    }
 
     setLoading(true);
     setError("");
