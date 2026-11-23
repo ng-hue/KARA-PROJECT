@@ -70,7 +70,7 @@ export default function NewRequestPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/requests"
-            className="rounded-md bg-[#012929] px-4 py-2 text-sm font-medium text-white"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white"
           >
             View All Requests
           </Link>

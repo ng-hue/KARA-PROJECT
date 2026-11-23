@@ -30,6 +30,7 @@ export default function CorrespondenceSection({ requestId }) {
   const [error, setError] = useState("");
   const [openingId, setOpeningId] = useState("");
   const [openError, setOpenError] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
 
   const loadEntries = useCallback(async () => {
     try {
@@ -71,9 +72,24 @@ export default function CorrespondenceSection({ requestId }) {
   return (
     <>
       <section className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold">
-          Correspondence{entries ? ` (${entries.length})` : ""}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">
+            Correspondence{entries ? ` (${entries.length})` : ""}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setFormOpen((open) => !open)}
+            aria-expanded={formOpen}
+            aria-controls="correspondence-form"
+            className={
+              formOpen
+                ? "rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+                : "rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover"
+            }
+          >
+            {formOpen ? "Close form" : "Log correspondence"}
+          </button>
+        </div>
 
         {error ? (
           <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-800">
@@ -98,7 +114,7 @@ export default function CorrespondenceSection({ requestId }) {
                     type="button"
                     onClick={() => openAttachment(entry)}
                     disabled={openingId === entry.id}
-                    className="mt-2 text-[#007a72] underline disabled:opacity-60"
+                    className="mt-2 inline-block rounded-md border border-gray-200 px-2 py-0.5 text-xs text-link hover:bg-gray-50 disabled:opacity-60"
                   >
                     {openingId === entry.id
                       ? "Opening attachment..."
@@ -117,9 +133,12 @@ export default function CorrespondenceSection({ requestId }) {
         ) : null}
       </section>
 
-      <div className="mt-6">
-        <CorrespondenceForm requestId={requestId} onSaved={loadEntries} />
-      </div>
+      {/* Kept open after a save so the "saved" message stays visible. */}
+      {formOpen ? (
+        <div id="correspondence-form" className="mt-6">
+          <CorrespondenceForm requestId={requestId} onSaved={loadEntries} />
+        </div>
+      ) : null}
     </>
   );
 }

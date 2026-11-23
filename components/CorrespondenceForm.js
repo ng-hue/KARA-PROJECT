@@ -21,7 +21,7 @@ const EMPTY = {
 };
 
 const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:border-[#009B91] focus:outline-none";
+  "mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-base focus:border-accent focus:outline-none";
 
 function Field({
   label,
@@ -274,7 +274,7 @@ export default function CorrespondenceForm({
             type="file"
             accept={ATTACHMENT_ACCEPT}
             onChange={handleAttachmentChange}
-            className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-[#012929] file:px-4 file:py-2 file:font-medium file:text-white hover:file:bg-[#023d3d]"
+            className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded-md file:border-0 file:bg-brand file:px-4 file:py-2 file:font-medium file:text-white hover:file:bg-brand-hover"
             aria-invalid={
               attachmentError ? true : undefined
             }
@@ -316,7 +316,7 @@ export default function CorrespondenceForm({
         <button
           type="submit"
           disabled={saving}
-          className="w-full rounded-md bg-[#012929] px-4 py-2.5 font-medium text-white hover:bg-[#023d3d] disabled:opacity-60 sm:w-auto"
+          className="w-full rounded-md bg-brand px-4 py-2.5 font-medium text-white hover:bg-brand-hover disabled:opacity-60 sm:w-auto"
         >
           {saving ? "Saving..." : "Save Entry"}
         </button>

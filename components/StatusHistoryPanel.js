@@ -7,6 +7,15 @@ import {
 } from "../lib/statusHistory";
 import { getAllowedNextStatuses } from "../lib/statusTransitions";
 import { getSupabase } from "../lib/supabase";
+import StatusBadge from "./StatusBadge";
+
+// Same MM/DD/YYYY date as the rest of the app, plus the time of the change.
+function formatChangedAt(value) {
+  const d = new Date(value);
+  const date = d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${date} ${time}`;
+}
 
 export default function StatusHistoryPanel({
   requestId,
@@ -22,6 +31,7 @@ export default function StatusHistoryPanel({
   const [error, setError] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
 
   const allowedStatuses =
     getAllowedNextStatuses(currentStatus);
@@ -89,6 +99,7 @@ export default function StatusHistoryPanel({
       setNextStatus("");
       setSentDate("");
       setNote("");
+      setFormOpen(false);
 
       await loadHistory();
 
@@ -115,22 +126,33 @@ export default function StatusHistoryPanel({
   }
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-white p-6">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold">
+    <section className="rounded-lg border border-gray-200 bg-white p-5">
+      <div className="mb-4">
+        <h2 className="font-semibold">
           Status
         </h2>
 
-        <p className="mt-1 text-sm text-gray-600">
-          Current status:{" "}
-          <span className="font-semibold text-gray-900">
-            {currentStatus}
-          </span>
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <StatusBadge status={currentStatus} />
+
+          {allowedStatuses.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setFormOpen((open) => !open)}
+              aria-expanded={formOpen}
+              aria-controls="status-change-form"
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+            >
+              {formOpen ? "Cancel" : "Change status"}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {allowedStatuses.length > 0 ? (
+        formOpen ? (
         <form
+          id="status-change-form"
           onSubmit={handleSubmit}
           className="space-y-4 border-t border-gray-100 pt-5"
         >
@@ -153,7 +175,7 @@ export default function StatusHistoryPanel({
                 }
               }}
               required
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             >
               <option value="">
                 Select next status
@@ -187,7 +209,7 @@ export default function StatusHistoryPanel({
                   setSentDate(event.target.value)
                 }
                 required
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           ) : null}
@@ -211,20 +233,21 @@ export default function StatusHistoryPanel({
               }
               placeholder="Example: Agency acknowledged by email"
               rows={3}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-[#007a72] px-4 py-2 text-sm font-medium text-white hover:bg-[#006860] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading
               ? "Saving..."
-              : "Change Status"}
+              : "Save Status"}
           </button>
         </form>
+        ) : null
       ) : (
         <div className="border-t border-gray-100 pt-5">
           <p className="text-sm text-gray-600">
@@ -239,8 +262,8 @@ export default function StatusHistoryPanel({
         </p>
       ) : null}
 
-      <div className="mt-8 border-t border-gray-100 pt-6">
-        <h3 className="text-lg font-semibold">
+      <div className="mt-5 border-t border-gray-100 pt-5">
+        <h3 className="text-sm font-semibold text-gray-700">
           Status History
         </h3>
 
@@ -262,13 +285,8 @@ export default function StatusHistoryPanel({
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  {new Date(
-                    entry.changed_at
-                  ).toLocaleString()}
-                </p>
-
-                <p className="mt-1 text-xs text-gray-500">
-                  Changed by:{" "}
+                  {formatChangedAt(entry.changed_at)}
+                  {" · "}
                   {changedByLabel(entry)}
                 </p>
 
