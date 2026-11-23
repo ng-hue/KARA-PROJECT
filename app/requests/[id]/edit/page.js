@@ -55,6 +55,10 @@ export default function EditRequestPage() {
           target_agency: request.target_agency ?? "",
           date_sent: request.date_sent ?? "",
           status: request.status,
+          request_type: request.request_type ?? "",
+          records_contact: request.records_contact ?? "",
+          send_method: request.send_method ?? "",
+          deadline_rule: request.deadline_rule ?? "",
         }}
         onSubmit={handleUpdate}
         submitLabel="Save Changes"

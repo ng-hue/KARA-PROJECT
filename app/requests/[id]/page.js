@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { getRequest } from "@/lib/requests";
+import { getRequest, missingSentFields } from "@/lib/requests";
 import { formatDate } from "@/lib/format";
+import { REQUEST_TYPES, SEND_METHODS } from "@/lib/constants";
 import {
   DEADLINE_FOOTNOTE,
   NOT_SUPPORTED_LABEL,
@@ -26,6 +27,22 @@ function Field({ label, children }) {
       <dd className="mt-1">{children}</dd>
     </div>
   );
+}
+
+function labelFor(list, value) {
+  return list.find((item) => item.value === value)?.label;
+}
+
+function Recorded({ value }) {
+  if (!value) return <span className="text-gray-500">Not recorded</span>;
+  return value;
+}
+
+function sentFieldsProblem(request, nextStatus) {
+  if (nextStatus !== "Sent") return "";
+  const missing = Object.keys(missingSentFields(request)).map((key) => key.replace("_", " "));
+  if (missing.length === 0) return "";
+  return `Before moving this request to Sent, edit it to add: ${missing.join(", ")}.`;
 }
 
 // Deadline and flag come from the same shared helpers as the list page
@@ -139,6 +156,15 @@ export default function RequestDetailPage() {
             <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
               <Field label="State">{request.state}</Field>
               <Field label="Target Agency">{request.target_agency}</Field>
+              <Field label="Request Type">
+                <Recorded value={labelFor(REQUEST_TYPES, request.request_type)} />
+              </Field>
+              <Field label="Send Method">
+                <Recorded value={labelFor(SEND_METHODS, request.send_method)} />
+              </Field>
+              <Field label="Records Contact">
+                <Recorded value={request.records_contact} />
+              </Field>
               <Field label="Date Sent">{formatDate(request.date_sent)}</Field>
               <Field label="Deadline">
                 <DeadlineValue request={request} info={deadlineFor(request)} />
@@ -150,6 +176,13 @@ export default function RequestDetailPage() {
             </dl>
 
             <div className="mt-6 border-t border-gray-100 pt-4 text-sm">
+              <h2 className="text-gray-500">Deadline Rule</h2>
+              <p className="mt-1 whitespace-pre-wrap">
+                <Recorded value={request.deadline_rule} />
+              </p>
+            </div>
+
+            <div className="mt-6 border-t border-gray-100 pt-4 text-sm">
               <h2 className="text-gray-500">Request Text</h2>
               <p className="mt-1 whitespace-pre-wrap">{request.request_text}</p>
             </div>
@@ -159,6 +192,7 @@ export default function RequestDetailPage() {
             <StatusHistoryPanel
               requestId={request.id}
               currentStatus={request.status}
+              checkStatusChange={(next) => sentFieldsProblem(request, next)}
               onStatusChanged={(newStatus) =>
                 setRequest((current) => ({
                   ...current,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { STATES, STATUSES } from "@/lib/constants";
+import { DEFAULT_STATUS, REQUEST_TYPES, SEND_METHODS, STATES, STATUSES } from "@/lib/constants";
 import { validateRequest } from "@/lib/requests";
 import { calculateDeadline, deadlineLabel } from "@/lib/deadlines";
 import { formatDate } from "@/lib/format";
@@ -33,7 +33,13 @@ export default function RequestForm({
   showStatus = true,
   showDeadline = false,
 }) {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState(() => ({
+    ...initialValues,
+    request_type: initialValues.request_type ?? "",
+    records_contact: initialValues.records_contact ?? "",
+    send_method: initialValues.send_method ?? "",
+    deadline_rule: initialValues.deadline_rule ?? "",
+  }));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -66,6 +72,7 @@ export default function RequestForm({
   }
 
   const deadline = calculateDeadline(values.state, values.date_sent);
+  const sentFieldsRequired = (values.status || DEFAULT_STATUS) !== DEFAULT_STATUS;
 
   return (
     <div className="mt-6 space-y-5">
@@ -96,6 +103,34 @@ export default function RequestForm({
 
       <Field label="Target Agency" name="target_agency" error={errors.target_agency} required>
         <input id="target_agency" name="target_agency" value={values.target_agency} onChange={update} className={inputClass} {...aria("target_agency")} />
+      </Field>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Request Type" name="request_type" error={errors.request_type} required>
+          <select id="request_type" name="request_type" value={values.request_type} onChange={update} className={inputClass} {...aria("request_type")}>
+            <option value="">Choose a request type</option>
+            {REQUEST_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Send Method" name="send_method" error={errors.send_method} required={sentFieldsRequired}>
+          <select id="send_method" name="send_method" value={values.send_method} onChange={update} className={inputClass} {...aria("send_method")}>
+            <option value="">Choose a send method</option>
+            {SEND_METHODS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Records Contact" name="records_contact" error={errors.records_contact} required={sentFieldsRequired}>
+        <input id="records_contact" name="records_contact" value={values.records_contact} onChange={update} className={inputClass} {...aria("records_contact")} />
+      </Field>
+
+      <Field label="Deadline Rule" name="deadline_rule" error={errors.deadline_rule} required={sentFieldsRequired}>
+        <textarea id="deadline_rule" name="deadline_rule" rows={3} value={values.deadline_rule} onChange={update} className={inputClass} {...aria("deadline_rule")} />
       </Field>
 
       {showStatus ? (
