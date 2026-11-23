@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/format";
 import {
   DEADLINE_FOOTNOTE,
   NOT_SUPPORTED_LABEL,
+  NO_STATUTORY_DEADLINE_LABEL,
   deadlineLabel,
   getDeadlineInfo,
 } from "@/lib/deadlines";
@@ -20,13 +21,15 @@ function savedDeadlineText(saved) {
     return NOT_SUPPORTED_LABEL;
   }
 
+  if (info.kind === "none") {
+    return NO_STATUTORY_DEADLINE_LABEL;
+  }
+
   if (!info.date) {
     return "not reported";
   }
 
-  const prefix = info.kind === "estimated" ? "estimated " : "";
-
-  return `${prefix}${formatDate(info.date)} (${deadlineLabel(saved.state)})`;
+  return `${formatDate(info.date)} (${deadlineLabel(saved.state)})`;
 }
 
 const EMPTY = {

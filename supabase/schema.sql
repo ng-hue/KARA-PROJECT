@@ -7,10 +7,21 @@ create table if not exists public.requests (
   request_text text not null,
   state text not null,
   target_agency text not null,
-  date_sent date not null,
+  date_sent date,
   deadline date,
-  status text not null default 'Draft'
-    check (status in ('Draft', 'Sent', 'Acknowledged', 'Fulfilled', 'Denied', 'Appealed')),
+  status text not null default 'Drafted'
+    check (
+      status in (
+        'Drafted',
+        'Sent',
+        'Acknowledged',
+        'Provided',
+        'Partial',
+        'Refused',
+        'No response by deadline',
+        'Withdrawn'
+      )
+    ),
   created_at timestamptz not null default now()
 );
 
@@ -25,7 +36,10 @@ begin
     from pg_policies
     where schemaname = 'public' and tablename = 'requests'
   loop
-    execute format('drop policy %I on public.requests', policy_name);
+    execute format(
+      'drop policy %I on public.requests',
+      policy_name
+    );
   end loop;
 end
 $$;
@@ -34,8 +48,20 @@ revoke all on public.requests from anon;
 grant select, insert, update on public.requests to authenticated;
 
 create policy "Authenticated users can read requests"
-  on public.requests for select to authenticated using (true);
+  on public.requests
+  for select
+  to authenticated
+  using (true);
+
 create policy "Authenticated users can create requests"
-  on public.requests for insert to authenticated with check (true);
+  on public.requests
+  for insert
+  to authenticated
+  with check (true);
+
 create policy "Authenticated users can update requests"
-  on public.requests for update to authenticated using (true) with check (true);
+  on public.requests
+  for update
+  to authenticated
+  using (true)
+  with check (true);

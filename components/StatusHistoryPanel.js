@@ -16,13 +16,15 @@ export default function StatusHistoryPanel({
 }) {
   const [history, setHistory] = useState([]);
   const [nextStatus, setNextStatus] = useState("");
+  const [sentDate, setSentDate] = useState("");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState("");
 
-  const allowedStatuses = getAllowedNextStatuses(currentStatus);
+  const allowedStatuses =
+    getAllowedNextStatuses(currentStatus);
 
   async function loadHistory() {
     try {
@@ -51,7 +53,16 @@ export default function StatusHistoryPanel({
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!nextStatus) return;
+    if (!nextStatus) {
+      return;
+    }
+
+    if (nextStatus === "Sent" && !sentDate) {
+      setError(
+        "Please enter the date the request was sent."
+      );
+      return;
+    }
 
     const problem = checkStatusChange ? checkStatusChange(nextStatus) : "";
     if (problem) {
@@ -67,12 +78,16 @@ export default function StatusHistoryPanel({
         requestId,
         currentStatus,
         nextStatus,
-        note
+        note,
+        nextStatus === "Sent"
+          ? sentDate
+          : null
       );
 
       const updatedStatus = nextStatus;
 
       setNextStatus("");
+      setSentDate("");
       setNote("");
 
       await loadHistory();
@@ -102,7 +117,9 @@ export default function StatusHistoryPanel({
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-6">
       <div className="mb-6">
-        <h2 className="text-lg font-semibold">Status</h2>
+        <h2 className="text-lg font-semibold">
+          Status
+        </h2>
 
         <p className="mt-1 text-sm text-gray-600">
           Current status:{" "}
@@ -128,19 +145,52 @@ export default function StatusHistoryPanel({
             <select
               id="next-status"
               value={nextStatus}
-              onChange={(event) => setNextStatus(event.target.value)}
+              onChange={(event) => {
+                setNextStatus(event.target.value);
+
+                if (event.target.value !== "Sent") {
+                  setSentDate("");
+                }
+              }}
               required
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
             >
-              <option value="">Select next status</option>
+              <option value="">
+                Select next status
+              </option>
 
               {allowedStatuses.map((status) => (
-                <option key={status} value={status}>
+                <option
+                  key={status}
+                  value={status}
+                >
                   {status}
                 </option>
               ))}
             </select>
           </div>
+
+          {nextStatus === "Sent" ? (
+            <div>
+              <label
+                htmlFor="sent-date"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Date sent
+              </label>
+
+              <input
+                id="sent-date"
+                type="date"
+                value={sentDate}
+                onChange={(event) =>
+                  setSentDate(event.target.value)
+                }
+                required
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
+              />
+            </div>
+          ) : null}
 
           <div>
             <label
@@ -156,7 +206,9 @@ export default function StatusHistoryPanel({
             <textarea
               id="status-note"
               value={note}
-              onChange={(event) => setNote(event.target.value)}
+              onChange={(event) =>
+                setNote(event.target.value)
+              }
               placeholder="Example: Agency acknowledged by email"
               rows={3}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-[#007a72] focus:outline-none focus:ring-1 focus:ring-[#007a72]"
@@ -168,7 +220,9 @@ export default function StatusHistoryPanel({
             disabled={loading}
             className="rounded-md bg-[#007a72] px-4 py-2 text-sm font-medium text-white hover:bg-[#006860] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Saving..." : "Change Status"}
+            {loading
+              ? "Saving..."
+              : "Change Status"}
           </button>
         </form>
       ) : (
@@ -214,7 +268,8 @@ export default function StatusHistoryPanel({
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500">
-                  Changed by: {changedByLabel(entry)}
+                  Changed by:{" "}
+                  {changedByLabel(entry)}
                 </p>
 
                 {entry.note ? (

@@ -9,6 +9,7 @@ import { REQUEST_TYPES, SEND_METHODS } from "@/lib/constants";
 import {
   DEADLINE_FOOTNOTE,
   NOT_SUPPORTED_LABEL,
+  NO_STATUTORY_DEADLINE_LABEL,
   calendarDaysBetween,
   deadlineLabel,
   getDeadlineInfo,
@@ -47,16 +48,18 @@ function sentFieldsProblem(request, nextStatus) {
 // Deadline and flag come from the same shared helpers as the list page
 // (SCRUM-183, risk R7), so the two pages always agree.
 function deadlineFor(request) {
-  return request.status === "Draft" ? null : getDeadlineInfo(request.state, request.date_sent);
+  return request.status === "Drafted"
+  ? null
+  : getDeadlineInfo(request.state, request.date_sent);
 }
 
 function DeadlineValue({ request, info }) {
   if (!info) return <span className="text-gray-500">Not sent</span>;
   if (info.kind === "unsupported") return <span className="text-gray-500">{NOT_SUPPORTED_LABEL}</span>;
+  if (info.kind === "none") return <span className="text-gray-500">{NO_STATUTORY_DEADLINE_LABEL}</span>;
   if (!info.date) return <span className="text-gray-500">Not reported</span>;
   return (
     <span title={deadlineLabel(request.state)}>
-      {info.kind === "estimated" ? "Est. " : ""}
       {formatDate(info.date)}*
     </span>
   );

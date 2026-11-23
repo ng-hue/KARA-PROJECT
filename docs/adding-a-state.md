@@ -5,9 +5,9 @@ Status: Draft for sponsor review
 
 Every state not listed in `STATE_DEADLINE_RULES` (`lib/deadlines.js`) shows "State Not Supported Yet". Follow these steps to add one.
 
-## 1. Research the statute
+## 1. Get the rule from the sponsor
 
-Use primary sources only: the state legislature's own statute page. Record:
+The team does not research state law (Sprint 5, S5 US7). The sponsor supplies each state's rule in writing, in the fields below, and the rule is entered exactly as written. If a rule does not fit these fields, tell the sponsor what is missing instead of filling it in. Each rule has:
 
 | Field | What to record |
 |---|---|
@@ -20,14 +20,14 @@ Use primary sources only: the state legislature's own statute page. Record:
 | extension | Any extension the statute lets the agency take, or null |
 | statutoryLanguage | For `prompt` states, the statute's own words |
 
-If the statute is unclear, stop and raise it with the sponsor. Do not guess a number of days.
+Do not guess a number of days.
 
 ## 2. Add the rule
 
 1. Add the state to `STATE_DEADLINE_RULES` in `lib/deadlines.js`.
-2. Add the state to `STATES` in `lib/constants.js` so it appears on the New Request form.
+2. Add the state to `STATES` in `lib/constants.js` so it appears on the New Request form. A test fails if the two lists differ.
 
-Adding or changing a `fixed` state changes `ESTIMATED_RULE`, the estimated deadline used for every `prompt` and `none` state. Check the new average and update the estimated rule test.
+A `prompt` or `none` state shows "No statutory deadline", stores no date, and is never flagged.
 
 ## 3. Test
 
