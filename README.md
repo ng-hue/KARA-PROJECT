@@ -304,13 +304,15 @@ Current Sprint 3 automated test result:
 
 | # | Risk | Likelihood / Impact | Watch owner | Warning sign | Planned response |
 | --- | --- | --- | --- | --- | --- |
-| R1 | Storage location (Supabase Storage or Google Drive links) is not decided at planning | High / High | Nathan (US1, SCRUM-197) | No sponsor answer at the 10/28/2026 meeting | Start US2 and US4 first, which do not depend on it. Hold US1 and US3 until the sponsor answers. |
-| R2 | Storage policies leave files readable without signing in | Medium / High | Nathan (US1, SCRUM-197) | The anonymous read test returns any file bytes | Do not merge US3 until every US1 test passes. |
-| R3 | Real agency correspondence or identifying details enter the tool | Low / High | Daniel (US2, SCRUM-198) | Any non-fake file, or a summary naming a person | Delete it the same day and tell the sponsor within 1 business day. |
-| R4 | US2 slips and blocks US3, US4, and US5 | Medium / Medium | Daniel (US2, SCRUM-198) | The correspondence table not merged by the sprint midpoint | Reilly reorders dependent tasks. Scope is not extended; stories drop to the product backlog instead. |
-| R5 | Failed saves leave orphaned files in storage | Medium / Low | Tommy (US3, SCRUM-199) | Bucket object count exceeds entries with attachments | Cleanup on failed save is a US3 task, checked by the failed save test. |
-| R6 | Field names drift from the Master Fields List | Medium / Medium | Daniel (US2, SCRUM-198) | Migration merged before the field check is recorded | The field check is the first US2 task. |
-| R7 | Message types or user roles get pulled into Sprint 4 | Medium / Medium | Reilly | Anyone starts a message type pick list or a roles table | Both are out of scope until the sponsor decides. Stop and move the work to the product backlog. |
+| R1 | Production does not match the code; US1 blocks US2, US3, and the final demo | High / High | Nathan (US1, SCRUM-230) | kprsite.netlify.app does not show the edit page, status history panel, or correspondence form after sign-in | Nathan finishes US1 first. No merges to main2 in the meantime. |
+| R2 | Storage location (Supabase Storage or Google Drive links) still has no recorded sponsor answer | High / High | Nathan (US2, SCRUM-231) | No written sponsor answer when US2 work starts | Reilly raises it at the next sponsor check-in. Hold upload work on US2 and US3 until the sponsor answers. |
+| R3 | Storage policies leave files readable without signing in | Medium / High | Nathan (US2, SCRUM-231) | The anonymous read test returns any file bytes | Do not merge US3 until every US2 test passes. |
+| R4 | The form shows saved when the file was dropped, or a failed save leaves orphaned files | Medium / High | Tommy (US3, SCRUM-232) | An entry saves with an empty attachment_ref after a file was chosen, or bucket object count exceeds entries with attachments | The sponsor's added criterion and the failed save test must pass before merge. |
+| R5 | Real agency correspondence or identifying details enter the tool | Low / High | aiweka (US8, SCRUM-237) | Any non-fake file, or a field naming a real person | Delete it the same day and tell the sponsor within 1 business day. |
+| R6 | Stories marked Done are not on production | Medium / Medium | Reilly | A Done story cannot be reached on kprsite.netlify.app | Move the story back to In Progress until it is live on production. |
+| R7 | Stretch work gets ahead of committed work | Medium / Medium | Daniel (US9, SCRUM-239) | Time goes into US9 while US1, US2, or US3 is unmerged | Pause US9 until US1 to US3 are merged. |
+| R8 | Deadline rules do not match what the sponsor supplied in writing, or estimated averages remain | Low / Medium | Daniel (US7, SCRUM-236) | A rule has no written source, or Florida, Arizona, or Minnesota still shows an estimated date | Remove the rule and ask the sponsor. |
+| R9 | Reilly is unavailable 11/20/2026 to 11/22/2026, just before the sprint ends 11/24/2026 | High / Medium | Reilly | Standups not posted or the board not updated while Reilly is out, or the Sprint 5 Report draft not started by 11/23/2026 | Reilly asks a teammate to post standups and keep the board current through 11/22/2026, then picks up the Sprint 5 Report and Team Report on return. Scope is not extended; slipped deliverables are reported to the sponsor. |
 
 ## Team
 
