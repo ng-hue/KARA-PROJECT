@@ -21,6 +21,7 @@ export default function StatusHistoryPanel({
   requestId,
   currentStatus,
   onStatusChanged,
+  checkStatusChange,
 }) {
   const [history, setHistory] = useState([]);
   const [nextStatus, setNextStatus] = useState("");
@@ -70,6 +71,12 @@ export default function StatusHistoryPanel({
       setError(
         "Please enter the date the request was sent."
       );
+      return;
+    }
+
+    const problem = checkStatusChange ? checkStatusChange(nextStatus) : "";
+    if (problem) {
+      setError(problem);
       return;
     }
 
