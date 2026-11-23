@@ -291,6 +291,15 @@ function load() {
   const waiting = all ? all.filter((r) => FLAGGABLE_STATUSES.includes(r.status)).length : 0;
   const dueSoon = all ? all.filter((r) => r.flag?.key === "due_soon").length : 0;
 
+  // Each tile is one view: it replaces the status and flag filters and keeps
+  // the state filter. Clicking the selected tile clears it again.
+  function tile(view) {
+    const selected =
+      filters.status === (view.status || "") && filters.flag === (view.flag || "");
+    const next = selected ? { state: filters.state } : { state: filters.state, ...view };
+    return { selected, href: `/requests${filtersToQuery(next)}` };
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -316,27 +325,24 @@ function load() {
             label="Overdue"
             value={overdue}
             tone={overdue ? "text-red-700" : ""}
-            href={`/requests${filtersToQuery({ ...filters, flag: "overdue" })}`}
-            selected={filters.flag === "overdue"}
+            {...tile({ flag: "overdue" })}
           />
           <Stat
             label="Due soon"
             value={dueSoon}
             tone={dueSoon ? "text-amber-800" : ""}
-            href={`/requests${filtersToQuery({ ...filters, flag: "due_soon" })}`}
-            selected={filters.flag === "due_soon"}
+            {...tile({ flag: "due_soon" })}
           />
           <Stat
             label="Waiting on agency"
             value={waiting}
-            href={`/requests${filtersToQuery({ ...filters, status: WAITING_FILTER })}`}
-            selected={filters.status === WAITING_FILTER}
+            {...tile({ status: WAITING_FILTER })}
           />
           <Stat
             label="All requests"
             value={all.length}
-            href="/requests"
-            selected={!filtered}
+            href={`/requests${filtersToQuery({ state: filters.state })}`}
+            selected={!filters.status && !filters.flag}
           />
         </div>
       ) : null}
