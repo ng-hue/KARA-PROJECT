@@ -145,17 +145,11 @@ For a fresh *development-only* Supabase project:
 
 ### Supabase correspondence file storage
 
-The app uses a private Storage bucket named `correspondence-files`. If the team uses a different bucket name, update `ATTACHMENT_BUCKET` in `lib/attachmentRules.js` to match it.
+The app uses a private Supabase Storage bucket named `correspondence-files`. The Sprint 5 approach assumes Supabase Storage; the sponsor's answer to design note open question 2 is still unrecorded.
 
-1. In Supabase, open **Storage → Buckets** and create or edit the `correspondence-files` bucket. Keep it **private**.
-2. Set the bucket's maximum file size to **10 MB**.
-3. Set allowed MIME types to:
-   - `application/pdf`
-   - `image/png`
-   - `image/jpeg`
-   - `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-4. In the bucket's policies on `storage.objects`, allow `SELECT` and `INSERT` for the `authenticated` role, scoped to `bucket_id = 'correspondence-files'`. Do not add `UPDATE` or `DELETE` policies. Remove any broader policies that allow anonymous access or those operations.
-5. Uploaded files are stored at `{request_id}/{correspondence_id}/{file name}`. The correspondence row stores only this path. Opening an attachment creates a new signed URL that expires after 60 seconds; no public URL is saved.
+1. After running `supabase/correspondence.sql`, run `supabase/correspondence_storage.sql` in the Supabase SQL Editor. It creates or updates the bucket as private, sets a 10 MiB file limit and allowed MIME types, and applies storage policies for signed-in reads/uploads, approved file extensions, and no updates/deletes.
+2. The 10 MiB limit and supported attachment types are proposed and still need sponsor sign-off. The app also validates these limits before upload, but the bucket policies enforce them for direct uploads.
+3. Uploaded files are stored at `{request_id}/{correspondence_id}/{file name}`. The correspondence row stores only this path. Opening an attachment creates a new signed URL that expires after 60 seconds; no public URL is saved.
 
 ### Seed the database
 

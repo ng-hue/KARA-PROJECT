@@ -211,3 +211,15 @@ Run after applying the authenticated policies in `supabase/schema.sql` and provi
 | AUTH-03 | Sign in as the sponsor, create a fictional request, and view the list. | The new request appears while signed in. |
 | AUTH-04 | Sign out and revisit the request list and detail URL. | Both redirect to `/login` until signing in again. |
 
+## Sprint 5 US2: Private correspondence files
+
+Run after applying `supabase/correspondence_storage.sql` and signing in with a provisioned test account. Use only disposable fictional files.
+
+| ID | Test | Expected result |
+|---|---|---|
+| FILE-01 | With no session, request an existing object's path from the Supabase Storage download endpoint using only the anon key. | Returns 400, 401, or 403; response body contains 0 file bytes. |
+| FILE-02 | While signed in, create a signed URL from the request detail page, wait 61 seconds, then open it. Generate and open a fresh link from the detail page. | The expired URL fails; the fresh detail-page link opens the file. |
+| FILE-03 | While signed in, upload an 11 MB PDF and then an `.exe` directly to the `correspondence-files` bucket. | Both uploads are rejected and 0 objects are created for either attempt. |
+
+Record each result as PASS, FAIL, or NOT RUN with the date; do not mark a case PASS without observing it.
+
