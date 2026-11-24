@@ -40,6 +40,9 @@ drop policy if exists "Correspondence files prevent updates"
 drop policy if exists "Correspondence files prevent deletes"
   on storage.objects;
 
+drop policy if exists "Correspondence files allow authenticated deletes"
+  on storage.objects;
+
 -- A restrictive policy prevents any broader storage policy from making this
 -- bucket readable or writable without a signed-in user.
 create policy "Correspondence files require authentication"
@@ -86,9 +89,8 @@ create policy "Correspondence files prevent updates"
   using (bucket_id <> 'correspondence-files')
   with check (bucket_id <> 'correspondence-files');
 
-create policy "Correspondence files prevent deletes"
+create policy "Correspondence files allow authenticated deletes"
   on storage.objects
-  as restrictive
   for delete
-  to public
-  using (bucket_id <> 'correspondence-files');
+  to authenticated
+  using (bucket_id = 'correspondence-files');
