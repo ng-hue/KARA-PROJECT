@@ -239,8 +239,8 @@ One row per email, letter, or response file exchanged with an agency about a req
 - **Configuration:** `netlify.toml`
 - **Production branch:** `main` (GitHub integration enabled; automatic deployments verified)
 - **Verified production commit:** `ba0cb29`
-- **Production deployment:** Successfully published automatically after PR #4 merged (20 seconds)
-- **Deploy preview:** Automatically created for PR #4 (24 seconds)
+- **Production deployment:** Verified 11/24/2026. Netlify built `main@a17ceeb`, and the edit page, status history panel, and correspondence entry form are reachable on kprsite.netlify.app after sign-in.
+- **Retired branch:** `main2` was fast-forwarded into `main` and deleted on 11/24/2026. It is preserved as the tag `archive/main2`. Create feature branches from `main` and target `main` with all pull requests.
 
 ### Environment variables on Netlify
 
